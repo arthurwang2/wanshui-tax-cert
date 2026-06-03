@@ -373,6 +373,11 @@ const HEADER_SKIP =
   /^(税种|税款所属|实缴|入\s*\(?退?\)?\s*库|序号|No\.|金额|原凭证|填发|证明|合计|备注|税务机关|盖章|金额合计|小写|大写|编号)/i;
 /** 非正常税款：罚没、罚款等（整期整税种剔除） */
 const PENALTY_TAX_RE = /罚没|罚款|没收收入/;
+/** 资格判断/说明文案，不得当作税种 */
+const JUDGMENT_TAX_RE =
+  /连续.*季度|特例|初步判断|初步满足|缴纳要求|均可|通过项|不符合|存疑|验章|政务平台|滚动\s*12|购车资格|本工具|不分税种|N-1|N-2/;
+const KNOWN_TAX_KEYWORDS =
+  /增值税|企业所得税|消费税|城建税|城市维护建设税|教育费附加|地方教育附加|印花税|契税|土地增值税|房产税|城镇土地使用税|车船税|车辆购置税|个人所得税|资源税|环境保护税|关税|耕地占用税|水利建设|残疾人就业|文化事业|工会经费|社保|医疗保险|养老保险/;
 
 function ensurePdfJs() {
   if (typeof pdfjsLib === 'undefined') {
@@ -647,6 +652,17 @@ function isPeriodSpanTooLong(periodStr) {
   return !!range && periodSpanMonths(range) > 3;
 }
 
+function isValidTaxType(type) {
+  const t = String(type || '').trim();
+  if (!t || t.length < 2) return false;
+  if (JUDGMENT_TAX_RE.test(t)) return false;
+  if (HEADER_SKIP.test(t)) return false;
+  if (/^\d+(\.\d+)?$/.test(t)) return false;
+  if (KNOWN_TAX_KEYWORDS.test(t)) return true;
+  if (/税/.test(t) && t.length <= 24 && !/[\n\r]/.test(t)) return true;
+  return false;
+}
+
 function pad2(n) {
   return String(n).padStart(2, '0');
 }
@@ -723,11 +739,17 @@ async function pdfToLines(arrayBuffer) {
 }
 
 function extractCertNumber(text) {
-  const t = String(text || '').replace(/\s+/g, ' ');
-  let m = t.match(/(\d{2}\(\d{2,6}\)\d+)\s*证明\s*(\d+)/);
+  const raw = String(text || '');
+  const t = raw.replace(/\s+/g, ' ');
+  const compact = raw.replace(/\s+/g, '');
+  let m = compact.match(/(\d{2}\(\d{2,6}\)\d+)证明(\d{6,})/);
+  if (m) return `${m[1]}证明${m[2]}`;
+  m = t.match(/(\d{2}\(\d{2,6}\)\d+)\s*证明\s*(\d+)/);
   if (m) return `${m[1]}证明${m[2]}`;
   m = t.match(/(\d{2}\(\d{2,6}\)\d+)\s+证明\s+(\d+)/);
   if (m) return `${m[1]}证明${m[2]}`;
+  m = compact.match(/证明No\.?(\d{8,})/i);
+  if (m) return `证明${m[1]}`;
   m = t.match(/证明\s*(?:No\.?|NO\.?|№)?\s*(\d{8,})/i);
   if (m) return `证明${m[1]}`;
   m = t.match(/No\.?\s*(\d{8,})\s*证明/i);
@@ -735,13 +757,84 @@ function extractCertNumber(text) {
   return '';
 }
 
-function extractPageInfo(text) {
-  const m = String(text || '').match(/第\s*(\d+)\s*页\s*[,，]?\s*共\s*(\d+)\s*页/);
-  if (!m) return null;
-  return { current: parseInt(m[1], 10), total: parseInt(m[2], 10) };
+function extractCertNumberFromSources(pagesText, pageRows) {
+  for (const t of pagesText || []) {
+    const n = extractCertNumber(t);
+    if (n) return n;
+  }
+  if (pageRows) {
+    for (const pr of pageRows) {
+      for (const row of pr.rows.slice(0, 12)) {
+        const n = extractCertNumber(row.line);
+        if (n) return n;
+      }
+    }
+  }
+  return '';
 }
 
-function parseCertMetaFromPdf(numPages, pagesText, fileName) {
+function extractPageInfo(text) {
+  const raw = String(text || '');
+  let m = raw.match(/第\s*(\d+)\s*页\s*[,，\/／]?\s*共\s*(\d+)\s*页/);
+  if (m) return { current: parseInt(m[1], 10), total: parseInt(m[2], 10) };
+  const compact = raw.replace(/\s+/g, '');
+  m = compact.match(/第(\d+)页[,，]?共(\d+)页/);
+  if (m) return { current: parseInt(m[1], 10), total: parseInt(m[2], 10) };
+  m = compact.match(/第(\d+)页\/共(\d+)页/);
+  if (m) return { current: parseInt(m[1], 10), total: parseInt(m[2], 10) };
+  return null;
+}
+
+function extractPageInfoFromSources(pagesText, pageRows) {
+  for (const t of pagesText || []) {
+    const info = extractPageInfo(t);
+    if (info) return info;
+  }
+  if (pageRows) {
+    for (const pr of pageRows) {
+      const rows = pr.rows;
+      for (let i = rows.length - 1; i >= Math.max(0, rows.length - 10); i--) {
+        const info = extractPageInfo(rows[i].line);
+        if (info) return info;
+      }
+    }
+  }
+  return extractPageInfo((pagesText || []).join(' '));
+}
+
+function inferPageFromFileName(fileName) {
+  const m = String(fileName || '').match(/[-_](\d+)\.pdf$/i);
+  if (!m) return null;
+  return { current: parseInt(m[1], 10), total: null };
+}
+
+/** 同批次 xxx-1.pdf … xxx-4.pdf：补全页码/总页数/证明编号 */
+function enhanceCertMetaFromFileNames(metaList) {
+  const groups = new Map();
+  for (const m of metaList) {
+    if (m.stitched) continue;
+    const match = m.fileName.match(/^(.+?)[-_](\d+)\.pdf$/i);
+    if (!match) continue;
+    const base = match[1];
+    if (!groups.has(base)) groups.set(base, []);
+    groups.get(base).push({ meta: m, page: parseInt(match[2], 10) });
+  }
+
+  for (const items of groups.values()) {
+    if (items.length < 2) continue;
+    items.sort((a, b) => a.page - b.page);
+    const total = items.length;
+    const sharedCert =
+      items.map((x) => x.meta.certNo).find(Boolean) || '';
+    for (const { meta, page } of items) {
+      if (!meta.pageCurrent) meta.pageCurrent = page;
+      if (!meta.pageTotal) meta.pageTotal = total;
+      if (!meta.certNo && sharedCert) meta.certNo = sharedCert;
+    }
+  }
+}
+
+function parseCertMetaFromPdf(numPages, pagesText, fileName, pageRows) {
   if (numPages > 1) {
     return {
       fileName,
@@ -752,13 +845,14 @@ function parseCertMetaFromPdf(numPages, pagesText, fileName) {
       pageTotal: null,
     };
   }
-  const text = pagesText[0] || '';
-  const pageInfo = extractPageInfo(text);
+  const certNo = extractCertNumberFromSources(pagesText, pageRows);
+  const pageInfo =
+    extractPageInfoFromSources(pagesText, pageRows) || inferPageFromFileName(fileName);
   return {
     fileName,
     numPages: 1,
     stitched: false,
-    certNo: extractCertNumber(text),
+    certNo,
     pageCurrent: pageInfo ? pageInfo.current : null,
     pageTotal: pageInfo ? pageInfo.total : null,
   };
@@ -805,6 +899,8 @@ function validateCertificateCompleteness(metaList) {
   const issues = [];
   const warnings = [];
   const notes = [];
+
+  enhanceCertMetaFromFileNames(metaList);
 
   for (const m of metaList) {
     if (m.stitched) {
@@ -1051,7 +1147,7 @@ function parseWenshuTable(pageRows) {
       if (!period) continue;
 
       const type = resolveTaxType(line, period, buckets, cellStrs);
-      if (!type || type.length < 2 || HEADER_SKIP.test(type)) continue;
+      if (!isValidTaxType(type)) continue;
 
       const amountSource = buckets.amount.join(' ') || line;
       const amounts = [...amountSource.matchAll(AMOUNT_RE)].map((m) => m[0]);
@@ -1179,8 +1275,7 @@ function parseRecordsFromLines(lines, pageRows) {
     if (Number.isNaN(amount)) continue;
 
     let type = stripDatesFromTaxType(extractTaxTypeFromRow(line, period, cells));
-    if (!type || type.length < 2) continue;
-    if (/^\d+(\.\d+)?$/.test(type)) continue;
+    if (!isValidTaxType(type)) continue;
 
     const key = `${period}|${type}|${amount}`;
     if (seen.has(key)) continue;
@@ -1236,7 +1331,7 @@ async function parsePdfBuffer(arrayBuffer, fileName) {
   const fullText = pdfFullText(lines);
   const taxpayer = parseTaxpayer(fullText);
   const records = parseRecordsFromLines(lines, pageRows);
-  const certMeta = parseCertMetaFromPdf(numPages, pagesText, fileName);
+  const certMeta = parseCertMetaFromPdf(numPages, pagesText, fileName, pageRows);
   return { fileName, taxpayer, records, fullText, certMeta };
 }
 
@@ -1317,7 +1412,9 @@ async function processFiles(files) {
       }
       if (!taxpayer.id && parsed.taxpayer.id) taxpayer.id = parsed.taxpayer.id;
 
-      allRecords.push(...parsed.records);
+      allRecords.push(
+        ...parsed.records.filter((r) => isValidTaxType(r.type))
+      );
     }
 
     lastTaxpayerRaw = { name: taxpayer.name, id: taxpayer.id };
@@ -1349,6 +1446,15 @@ async function processFiles(files) {
       errorBox.classList.toggle('pii-masked', privacyMaskEnabled);
     }
     applyPrivacyToUI();
+
+    if (!completeness.ok) {
+      summary.textContent = '材料不符合规范，已终止整理';
+      resultBody.innerHTML =
+        '<tr><td colspan="3" class="empty-hint">完税证明完整性校验未通过，请重新上传符合规范的原件（单页 PDF、证明编号与页码齐全）后重试。</td></tr>';
+      removedSection.style.display = 'none';
+      if (judgmentSection) judgmentSection.style.display = 'none';
+      return;
+    }
 
     if (allRecords.length === 0) {
       summary.textContent = '未能从 PDF 提取税款记录';
@@ -1628,12 +1734,17 @@ function quarterToIndex(qKey) {
   return parseInt(m[1], 10) * 4 + (parseInt(m[2], 10) - 1);
 }
 
-function findFourConsecutiveQuarters(qKeys) {
-  const indices = [...new Set(qKeys.map(quarterToIndex).filter((i) => i >= 0))].sort(
-    (a, b) => a - b
-  );
+function findFourConsecutiveQuarters(quarterSet) {
+  const indices = [...quarterSet]
+    .map(quarterToIndex)
+    .filter((i) => i >= 0)
+    .sort((a, b) => a - b);
   for (let i = 0; i <= indices.length - 4; i++) {
-    if (indices[i + 3] - indices[i] === 3) {
+    if (
+      indices[i + 1] === indices[i] + 1 &&
+      indices[i + 2] === indices[i] + 2 &&
+      indices[i + 3] === indices[i] + 3
+    ) {
       return {
         ok: true,
         start: indices[i],
@@ -1642,6 +1753,17 @@ function findFourConsecutiveQuarters(qKeys) {
     }
   }
   return { ok: false };
+}
+
+/** 按所属期结束日所在自然季度统计，不把跨月所属期内的每个月都算作已缴税季度 */
+function getQuarterSetFromRecords(records) {
+  const quarters = new Set();
+  for (const r of records) {
+    const range = parsePeriodRange(r.period);
+    if (!range) continue;
+    quarters.add(quarterKeyFromRange(range));
+  }
+  return quarters;
 }
 
 /** 按季申报时：最晚所属期可为「上一完整自然季度」的结束月，不要求达到 N-1 月 */
@@ -1668,24 +1790,21 @@ function quarterIndexToLabel(idx) {
 
 /** 连续4个自然季度内均有缴税即可，不要求同一税种 */
 function evaluateGlobalQuarterly(records, ctx) {
-  const quarterKeys = [];
+  const quarterSet = getQuarterSetFromRecords(records);
   let latestEnd = '';
 
   for (const r of records) {
     const range = parsePeriodRange(r.period);
     if (!range) continue;
-    for (const mk of expandPeriodToMonthKeys(range)) {
-      quarterKeys.push(monthKeyToQuarterKey(mk));
-    }
     const ek = monthKeyFromDate(range.end);
     if (ek > latestEnd) latestEnd = ek;
   }
 
-  if (quarterKeys.length === 0) {
+  if (quarterSet.size === 0) {
     return { ok: false, reason: '无有效税款所属期' };
   }
 
-  const consec = findFourConsecutiveQuarters(quarterKeys);
+  const consec = findFourConsecutiveQuarters(quarterSet);
   if (!consec.ok) {
     return {
       ok: false,
