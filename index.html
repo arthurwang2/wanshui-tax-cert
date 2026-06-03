@@ -216,6 +216,23 @@
   .judgment-detail li { margin: 4px 0; }
   .judgment-meta { font-size: 12px; color: #64748b; margin-top: 10px; }
   #mainApp { display: none; }
+  .privacy-bar {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+    margin-bottom: 18px;
+    padding: 10px 14px;
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 10px;
+    font-size: 13px;
+    color: #475569;
+  }
+  .privacy-bar input { width: 16px; height: 16px; }
+  .pii-masked { letter-spacing: 0.02em; }
+  .privacy-on .pii-masked { filter: blur(4px); user-select: none; }
+  .privacy-on .pii-masked:hover { filter: none; }
 </style>
 </head>
 <body>
@@ -244,6 +261,10 @@
   <div id="mainApp">
   <h1>完税证明智能整理</h1>
   <div class="subtitle">拖入或添加多个 PDF / ZIP，确认齐全后一次整理</div>
+  <label class="privacy-bar" id="privacyBar">
+    <input type="checkbox" id="privacyMask" checked>
+    <span>隐私模式：模糊显示纳税人名称、识别号、证明编号及文件名中的敏感信息（取消勾选可查看原文）</span>
+  </label>
 
   <div class="upload-area" id="dropZone">
     <div class="upload-icon">📄</div>
@@ -334,6 +355,13 @@ let completenessSection, completenessBody;
 /** @type {File[]} */
 let pendingFiles = [];
 let judgmentEnabled = false;
+let privacyMaskEnabled = true;
+let privacyMaskEl;
+let lastTaxpayerRaw = { name: '', id: '' };
+let lastTaxpayerChecks = [];
+let lastCertNos = [];
+let lastCompletenessResult = null;
+let lastErrorRaw = '';
 const MAX_PDFS = 50;
 
 const PERIOD_RE =
@@ -432,6 +460,15 @@ function initApp() {
   judgmentMeta = document.getElementById('judgmentMeta');
   completenessSection = document.getElementById('completenessSection');
   completenessBody = document.getElementById('completenessBody');
+  privacyMaskEl = document.getElementById('privacyMask');
+  if (privacyMaskEl) {
+    privacyMaskEnabled = privacyMaskEl.checked;
+    privacyMaskEl.addEventListener('change', () => {
+      privacyMaskEnabled = privacyMaskEl.checked;
+      applyPrivacyToUI();
+    });
+  }
+  if (resultBox) resultBox.classList.toggle('privacy-on', privacyMaskEnabled);
 
   btnPickFiles.addEventListener('click', (e) => {
     e.stopPropagation();
@@ -517,7 +554,7 @@ function renderQueue() {
     const li = document.createElement('li');
     li.className = 'queue-item';
     li.innerHTML = `
-      <span class="queue-item-name" title="${escapeHtml(file.name)}">${index + 1}. ${escapeHtml(file.name)}</span>
+      <span class="queue-item-name pii-masked" title="${escapeHtml(maskFileName(file.name))}">${index + 1}. ${escapeHtml(maskFileName(file.name))}</span>
       <button type="button" class="queue-item-remove" data-index="${index}" aria-label="移除">×</button>
     `;
     li.querySelector('.queue-item-remove').addEventListener('click', () => {
@@ -588,8 +625,15 @@ function clearResults() {
     completenessSection.style.display = 'none';
     completenessSection.className = 'completeness-card';
   }
+  lastTaxpayerRaw = { name: '', id: '' };
+  lastTaxpayerChecks = [];
+  lastCertNos = [];
+  lastCompletenessResult = null;
+  lastErrorRaw = '';
   taxpayerNameEl.textContent = '—';
   taxpayerIdEl.textContent = '—';
+  taxpayerNameEl.classList.remove('pii-masked');
+  taxpayerIdEl.classList.remove('pii-masked');
   sourceFilesEl.textContent = '—';
   summary.textContent = '正在解析 PDF…';
 }
@@ -828,24 +872,31 @@ function renderCompleteness(result) {
   } else if (result.multiComplete) {
     html += '<p><strong>已整理</strong>：多份完整证明已合并展示，请阅下方黄色提醒。</p>';
   } else if (result.certNos.length) {
-    html += `<p><strong>完整</strong>：证明编号 ${escapeHtml(result.certNos.join('、'))}，页码齐全。</p>`;
+    const certs = result.certNos.map((c) => maskCertNo(c)).join('、');
+    html += `<p><strong>完整</strong>：证明编号 <span class="pii-masked">${escapeHtml(certs)}</span>，页码齐全。</p>`;
   } else {
     html += '<p>未识别到可校验的证明编号。</p>';
   }
 
   if (result.warnings && result.warnings.length) {
     html += '<p style="margin-top:10px;color:#92400e"><strong>提醒</strong></p><ul>';
-    for (const w of result.warnings) html += `<li>${escapeHtml(w)}</li>`;
+    for (const w of result.warnings) {
+      html += `<li class="pii-masked">${escapeHtml(maskPIIInMessage(w))}</li>`;
+    }
     html += '</ul>';
   }
   if (result.issues.length) {
     html += '<p style="margin-top:10px"><strong>问题</strong></p><ul>';
-    for (const x of result.issues) html += `<li>${escapeHtml(x)}</li>`;
+    for (const x of result.issues) {
+      html += `<li class="pii-masked">${escapeHtml(maskPIIInMessage(x))}</li>`;
+    }
     html += '</ul>';
   }
   if (result.notes.length) {
     html += '<p style="margin-top:8px;color:#64748b">说明</p><ul>';
-    for (const n of result.notes) html += `<li>${escapeHtml(n)}</li>`;
+    for (const n of result.notes) {
+      html += `<li>${escapeHtml(maskPIIInMessage(n))}</li>`;
+    }
     html += '</ul>';
   }
   completenessBody.innerHTML = html;
@@ -1227,7 +1278,8 @@ async function processFiles(files) {
       pdfList = pdfList.slice(0, MAX_PDFS);
     }
 
-    sourceFilesEl.textContent = pdfList.map((p) => p.name).join('、');
+    sourceFilesEl.textContent = pdfList.map((p) => maskFileName(p.name)).join('、');
+    sourceFilesEl.classList.toggle('pii-masked', privacyMaskEnabled);
 
     const allRecords = [];
     let taxpayer = { name: '', id: '' };
@@ -1268,28 +1320,35 @@ async function processFiles(files) {
       allRecords.push(...parsed.records);
     }
 
-    taxpayerNameEl.textContent = taxpayer.name || '（未能识别）';
-    taxpayerIdEl.textContent = taxpayer.id || '（未能识别）';
+    lastTaxpayerRaw = { name: taxpayer.name, id: taxpayer.id };
+    lastTaxpayerChecks = taxpayerChecks;
 
     const completeness = validateCertificateCompleteness(certMetaList);
+    lastCertNos = completeness.certNos || [];
+    lastCompletenessResult = completeness;
     renderCompleteness(completeness);
 
     const taxpayerIssues = validateTaxpayerConsistency(certMetaList, taxpayerChecks);
     const allIssues = [...completeness.issues, ...taxpayerIssues];
 
+    let errorRaw = '';
     if (warnings.length || completeness.notes.length) {
       const parts = [...warnings, ...completeness.notes];
       if (allIssues.length) {
-        errorBox.style.display = 'block';
-        errorBox.textContent = allIssues.join('；') + '；' + parts.join('；');
+        errorRaw = allIssues.join('；') + '；' + parts.join('；');
       } else if (parts.length) {
-        errorBox.style.display = 'block';
-        errorBox.textContent = parts.join('；');
+        errorRaw = parts.join('；');
       }
     } else if (allIssues.length) {
-      errorBox.style.display = 'block';
-      errorBox.textContent = allIssues.join('；');
+      errorRaw = allIssues.join('；');
     }
+    lastErrorRaw = errorRaw;
+    if (errorRaw) {
+      errorBox.style.display = 'block';
+      errorBox.textContent = maskPIIInMessage(errorRaw);
+      errorBox.classList.toggle('pii-masked', privacyMaskEnabled);
+    }
+    applyPrivacyToUI();
 
     if (allRecords.length === 0) {
       summary.textContent = '未能从 PDF 提取税款记录';
@@ -1348,6 +1407,104 @@ function escapeHtml(s) {
     .replace(/</g, '&lt;')
     .replace(/>/g, '&gt;')
     .replace(/"/g, '&quot;');
+}
+
+function maskName(name) {
+  const s = String(name || '').trim();
+  if (!s || !privacyMaskEnabled) return s;
+  if (s.length <= 2) return s[0] + '＊';
+  const suffixes = ['股份有限公司', '有限公司', '有限责任公司'];
+  let suffix = '';
+  for (const suf of suffixes) {
+    if (s.endsWith(suf)) {
+      suffix = suf;
+      break;
+    }
+  }
+  const core = suffix ? s.slice(0, -suffix.length) : s;
+  const tail = suffix || s.slice(-1);
+  const head = core.slice(0, Math.min(2, core.length));
+  const tailCore = suffix ? '' : core.slice(-1);
+  const stars = '＊'.repeat(Math.max(2, Math.min(8, core.length - head.length - (tailCore ? 1 : 0))));
+  return head + stars + tailCore + tail;
+}
+
+function maskTaxId(id) {
+  const s = String(id || '').trim();
+  if (!s || !privacyMaskEnabled) return s;
+  if (s.length <= 6) return '＊'.repeat(s.length);
+  return s.slice(0, 4) + '＊'.repeat(s.length - 7) + s.slice(-3);
+}
+
+function maskCertNo(cert) {
+  const s = String(cert || '').trim();
+  if (!s || !privacyMaskEnabled) return s;
+  return s.replace(/\d+/g, (digits) => {
+    if (digits.length <= 4) return '＊'.repeat(digits.length);
+    return digits.slice(0, 2) + '＊'.repeat(digits.length - 4) + digits.slice(-2);
+  });
+}
+
+function maskFileName(name) {
+  const s = String(name || '');
+  if (!s || !privacyMaskEnabled) return s;
+  const m = s.match(/^(.+?)(\.[^.]+)?$/);
+  if (!m) return s;
+  const base = m[1];
+  const ext = m[2] || '';
+  if (base.length <= 3) return '＊＊＊' + ext;
+  return base.slice(0, 2) + '＊'.repeat(Math.min(6, base.length - 2)) + ext;
+}
+
+function maskPIIInMessage(text) {
+  if (!privacyMaskEnabled || !text) return text;
+  let out = String(text);
+  const names = [
+    lastTaxpayerRaw.name,
+    ...lastTaxpayerChecks.map((t) => t.name),
+  ].filter(Boolean);
+  const ids = [lastTaxpayerRaw.id, ...lastTaxpayerChecks.map((t) => t.id)].filter(
+    Boolean
+  );
+  const certs = [...lastCertNos];
+  for (const name of [...new Set(names)].sort((a, b) => b.length - a.length)) {
+    out = out.split(name).join(maskName(name));
+  }
+  for (const id of [...new Set(ids)].sort((a, b) => b.length - a.length)) {
+    out = out.split(id).join(maskTaxId(id));
+  }
+  for (const cert of [...new Set(certs)].sort((a, b) => b.length - a.length)) {
+    out = out.split(cert).join(maskCertNo(cert));
+  }
+  return out;
+}
+
+function displayTaxpayerName(name) {
+  const v = name || '（未能识别）';
+  return privacyMaskEnabled && name ? maskName(name) : v;
+}
+
+function displayTaxpayerId(id) {
+  const v = id || '（未能识别）';
+  return privacyMaskEnabled && id ? maskTaxId(id) : v;
+}
+
+function applyPrivacyToUI() {
+  if (resultBox) resultBox.classList.toggle('privacy-on', privacyMaskEnabled);
+  if (taxpayerNameEl) {
+    taxpayerNameEl.textContent = displayTaxpayerName(lastTaxpayerRaw.name);
+    taxpayerNameEl.classList.toggle('pii-masked', privacyMaskEnabled && !!lastTaxpayerRaw.name);
+  }
+  if (taxpayerIdEl) {
+    taxpayerIdEl.textContent = displayTaxpayerId(lastTaxpayerRaw.id);
+    taxpayerIdEl.classList.toggle('pii-masked', privacyMaskEnabled && !!lastTaxpayerRaw.id);
+  }
+  if (lastCompletenessResult) renderCompleteness(lastCompletenessResult);
+  if (errorBox && lastErrorRaw) {
+    errorBox.textContent = maskPIIInMessage(lastErrorRaw);
+    errorBox.classList.toggle('pii-masked', privacyMaskEnabled);
+  }
+  renderQueue();
 }
 
 function parsePeriodRange(periodStr) {
