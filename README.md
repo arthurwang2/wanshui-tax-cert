@@ -21,6 +21,10 @@
 - 须为**可选中文字**的电子 PDF；纯扫描件无法解析
 - 需联网加载 pdf.js、JSZip（首次打开）
 
+## 在线预览
+
+仓库开启 GitHub Pages 后，可访问：`https://arthurwang2.github.io/wanshui-tax-cert/`
+
 ## 文件
 
-`project/完税证明.html`
+- `index.html` — 主程序（与本地 `完税证明.html` 相同）
