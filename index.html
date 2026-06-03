@@ -1722,10 +1722,17 @@ function isQuarterLikeRange(range) {
   return span >= 2 && span <= 3;
 }
 
-function quarterKeyFromRange(range) {
-  const y = range.end.getFullYear();
-  const q = Math.floor(range.end.getMonth() / 3) + 1;
-  return `${y}-Q${q}`;
+/** 自然季度起止日：Q1=1-3月 … Q2=4-6月 … */
+function getNaturalQuarterBounds(year, q) {
+  const start = new Date(year, (q - 1) * 3, 1);
+  const end = new Date(year, q * 3, 0);
+  return { start, end };
+}
+
+/** 仅当税款所属期覆盖该季全部月份时计入（如 Q2 须含 4月1日～6月30日；仅 6月单月不算 Q2） */
+function recordCoversNaturalQuarter(range, year, q) {
+  const bounds = getNaturalQuarterBounds(year, q);
+  return range.start <= bounds.start && range.end >= bounds.end;
 }
 
 function quarterToIndex(qKey) {
@@ -1755,13 +1762,21 @@ function findFourConsecutiveQuarters(quarterSet) {
   return { ok: false };
 }
 
-/** 按所属期结束日所在自然季度统计，不把跨月所属期内的每个月都算作已缴税季度 */
+/** 按「所属期完整覆盖自然季度」统计（见 recordCoversNaturalQuarter） */
 function getQuarterSetFromRecords(records) {
   const quarters = new Set();
   for (const r of records) {
     const range = parsePeriodRange(r.period);
     if (!range) continue;
-    quarters.add(quarterKeyFromRange(range));
+    const y0 = range.start.getFullYear();
+    const y1 = range.end.getFullYear();
+    for (let y = y0; y <= y1; y++) {
+      for (let q = 1; q <= 4; q++) {
+        if (recordCoversNaturalQuarter(range, y, q)) {
+          quarters.add(`${y}-Q${q}`);
+        }
+      }
+    }
   }
   return quarters;
 }
@@ -1806,9 +1821,14 @@ function evaluateGlobalQuarterly(records, ctx) {
 
   const consec = findFourConsecutiveQuarters(quarterSet);
   if (!consec.ok) {
+    const found =
+      quarterSet.size > 0
+        ? `已覆盖季度：${[...quarterSet].sort().join('、')}；`
+        : '';
     return {
       ok: false,
-      reason: '未形成连续4个自然季度均有缴税记录（不分税种）',
+      reason:
+        `${found}未形成连续4个自然季度均有缴税（须存在所属期覆盖整季的记录，如2025-Q2须为4～6月，单月所属期不计入）`,
     };
   }
 
