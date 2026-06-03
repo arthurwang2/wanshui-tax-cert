@@ -1,0 +1,1731 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>完税证明智能整理工具</title>
+<script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.min.js"></script>
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { font-family: system-ui, -apple-system, "Noto Sans SC", sans-serif; background:#f8fafc; color:#111827; padding:40px 20px; }
+  .container { max-width:980px; margin:0 auto; }
+  h1 { text-align:center; font-size:26px; font-weight:700; margin-bottom:8px; }
+  .subtitle { text-align:center; color:#64748b; margin-bottom:32px; }
+  .upload-area { background:#fff; border:3px dashed #cbd5e1; border-radius:16px; padding:60px 20px; text-align:center; cursor:pointer; transition:all .2s; max-width:600px; margin:0 auto; position:relative; display:block; }
+  .upload-area:hover, .upload-area.dragover { border-color:#2563eb; background:#f0f9ff; }
+  .upload-icon { font-size:48px; margin-bottom:12px; }
+  .upload-text { font-size:18px; font-weight:600; color:#334155; }
+  .upload-hint { font-size:14px; color:#64748b; margin-top:6px; }
+  #fileInput {
+    position: absolute;
+    width: 0.1px;
+    height: 0.1px;
+    opacity: 0;
+    overflow: hidden;
+    z-index: -1;
+  }
+  .lib-error {
+    max-width: 600px;
+    margin: 16px auto 0;
+    padding: 14px 18px;
+    background: #fef2f2;
+    border: 1px solid #fecaca;
+    border-radius: 10px;
+    color: #991b1b;
+    font-size: 14px;
+    display: none;
+  }
+  .processing-hint {
+    text-align: center;
+    margin-top: 12px;
+    font-size: 14px;
+    color: #2563eb;
+    display: none;
+  }
+  .queue-panel {
+    max-width: 600px;
+    margin: 20px auto 0;
+    background: #fff;
+    border-radius: 14px;
+    border: 1px solid #e2e8f0;
+    padding: 18px 20px;
+    display: none;
+  }
+  .queue-panel.visible { display: block; }
+  .queue-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 12px;
+    font-size: 15px;
+    font-weight: 600;
+    color: #334155;
+  }
+  .queue-list {
+    list-style: none;
+    max-height: 200px;
+    overflow-y: auto;
+    margin-bottom: 16px;
+    border: 1px solid #f1f5f9;
+    border-radius: 10px;
+  }
+  .queue-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 14px;
+    font-size: 14px;
+    border-bottom: 1px solid #f1f5f9;
+    gap: 8px;
+  }
+  .queue-item:last-child { border-bottom: none; }
+  .queue-item-name {
+    flex: 1;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    color: #1e293b;
+  }
+  .queue-item-remove {
+    flex-shrink: 0;
+    border: none;
+    background: none;
+    color: #94a3b8;
+    cursor: pointer;
+    font-size: 18px;
+    line-height: 1;
+    padding: 2px 6px;
+  }
+  .queue-item-remove:hover { color: #dc2626; }
+  .queue-actions {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+  }
+  .btn {
+    border: none;
+    border-radius: 10px;
+    padding: 12px 20px;
+    font-size: 15px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.15s;
+  }
+  .btn-primary {
+    background: #2563eb;
+    color: #fff;
+    flex: 1;
+    min-width: 140px;
+  }
+  .btn-primary:hover { background: #1d4ed8; }
+  .btn-primary:disabled { background: #94a3b8; cursor: not-allowed; }
+  .btn-ghost {
+    background: #f1f5f9;
+    color: #475569;
+  }
+  .btn-ghost:hover { background: #e2e8f0; }
+  .pick-link {
+    display: inline-block;
+    margin-top: 10px;
+    color: #2563eb;
+    font-size: 14px;
+    font-weight: 600;
+    text-decoration: underline;
+    cursor: pointer;
+    background: none;
+    border: none;
+    font-family: inherit;
+  }
+  .result-box { margin-top:32px; background:#fff; border-radius:16px; box-shadow:0 4px 6px -1px rgb(0 0 0 / 0.05); padding:28px; display:none; }
+  .taxpayer-card { display:grid; grid-template-columns:repeat(auto-fit, minmax(200px, 1fr)); gap:16px; padding:18px 20px; background:#f0f9ff; border-radius:12px; border:1px solid #bae6fd; margin-bottom:24px; }
+  .taxpayer-item label { display:block; font-size:12px; color:#64748b; margin-bottom:4px; }
+  .taxpayer-item span { font-size:15px; font-weight:600; color:#0f172a; word-break:break-all; }
+  table { width:100%; border-collapse:collapse; font-size:15px; }
+  th, td { padding:14px 12px; text-align:left; border-bottom:1px solid #e2e8f0; }
+  th { background:#f8fafc; font-weight:600; color:#475569; }
+  .amount { text-align:right; font-family:ui-monospace,monospace; font-weight:600; }
+  .period { white-space:nowrap; font-weight:600; }
+  .removed-section { margin-top:24px; padding:18px; background:#fef2f2; border-radius:12px; border:1px solid #fecaca; }
+  .removed-title { color:#991b1b; font-weight:700; margin-bottom:12px; }
+  .removed-chip { display:inline-block; background:#fee2e2; color:#7f1d1d; padding:4px 10px; border-radius:6px; margin:4px 6px 4px 0; font-size:13px; }
+  .error-box { margin-top:16px; padding:14px 18px; background:#fff7ed; border:1px solid #fed7aa; border-radius:10px; color:#9a3412; font-size:14px; display:none; }
+  .completeness-card {
+    margin-bottom: 20px;
+    padding: 16px 18px;
+    border-radius: 12px;
+    border: 1px solid #e2e8f0;
+    background: #fafafa;
+    display: none;
+  }
+  .completeness-card.ok { border-color: #86efac; background: #f0fdf4; }
+  .completeness-card.bad { border-color: #fecaca; background: #fef2f2; }
+  .completeness-card.warn { border-color: #fde68a; background: #fffbeb; }
+  .completeness-card h3 { font-size: 15px; font-weight: 700; margin-bottom: 8px; color: #334155; }
+  .completeness-card p, .completeness-card li { font-size: 13px; line-height: 1.6; color: #475569; }
+  .completeness-card ul { margin: 6px 0 0 18px; }
+  .empty-hint { text-align:center; padding:24px; color:#94a3b8; }
+  .disclaimer-gate {
+    max-width: 720px;
+    width: 92%;
+    margin: 0 auto 28px;
+    background: #fff;
+    border-radius: 16px;
+    padding: 32px 36px;
+    box-shadow: 0 8px 24px -4px rgb(0 0 0 / 0.1);
+    border: 1px solid #e2e8f0;
+  }
+  .disclaimer-gate h2 { font-size: 20px; margin-bottom: 18px; text-align: center; color: #0f172a; }
+  .disclaimer-text {
+    font-size: 14px;
+    line-height: 1.75;
+    color: #475569;
+    padding: 20px 22px;
+    background: #f8fafc;
+    border-radius: 12px;
+    margin-bottom: 20px;
+    border: 1px solid #e2e8f0;
+  }
+  .disclaimer-text p { margin-bottom: 12px; }
+  .disclaimer-text p:last-child { margin-bottom: 0; }
+  .disclaimer-check {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    font-size: 14px;
+    margin-bottom: 18px;
+    cursor: pointer;
+  }
+  .disclaimer-check input { margin-top: 3px; flex-shrink: 0; }
+  .disclaimer-actions { display: flex; gap: 10px; flex-wrap: wrap; }
+  .judgment-section {
+    margin-bottom: 24px;
+    padding: 20px;
+    border-radius: 14px;
+    border: 2px solid #e2e8f0;
+  }
+  .judgment-section.pass { border-color: #86efac; background: #f0fdf4; }
+  .judgment-section.fail { border-color: #fecaca; background: #fef2f2; }
+  .judgment-section.warn { border-color: #fde68a; background: #fffbeb; }
+  .judgment-title { font-size: 17px; font-weight: 700; margin-bottom: 10px; }
+  .judgment-section.pass .judgment-title { color: #166534; }
+  .judgment-section.fail .judgment-title { color: #991b1b; }
+  .judgment-section.warn .judgment-title { color: #92400e; }
+  .judgment-detail { font-size: 14px; line-height: 1.65; color: #334155; }
+  .judgment-detail ul { margin: 8px 0 0 18px; }
+  .judgment-detail li { margin: 4px 0; }
+  .judgment-meta { font-size: 12px; color: #64748b; margin-top: 10px; }
+  #mainApp { display: none; }
+</style>
+</head>
+<body>
+<div class="container">
+  <div class="disclaimer-gate" id="disclaimerGate">
+    <h2>使用前须知</h2>
+    <div class="disclaimer-text">
+      <p><strong>免责声明</strong></p>
+      <p>本工具仅作完税证明整理与购车资格辅助参考，不构成任何行政或法律意见。</p>
+      <p>PDF 识别存在极小概率差错，连续缴纳、所属时期等判断亦可能因版式差异产生偏差，结果仅供参考。</p>
+      <p><strong>本工具不对税务机关电子签章进行验真</strong>，无法判断文件来源是否官方、签章是否有效、PDF 是否在签章后被改动；上述事项须自行通过 Adobe 等阅读器或政务平台核验。</p>
+      <p>单位用户购车资格以「一网通办」等平台及税务、人社部门最终核验为准；因使用本工具产生的任何后果，由用户本人自行承担。</p>
+      <p>勾选并进入后可使用「购车资格初步判断」；选择跳过则仅提供完税证明整理功能，不进行资格判断。</p>
+    </div>
+    <label class="disclaimer-check">
+      <input type="checkbox" id="disclaimerAgree">
+      <span>我已阅读并同意上述免责声明</span>
+    </label>
+    <div class="disclaimer-actions">
+      <button type="button" class="btn btn-primary" id="btnAcceptDisclaimer">进入（含资格判断）</button>
+      <button type="button" class="btn btn-ghost" id="btnSkipDisclaimer">跳过（仅整理）</button>
+    </div>
+    <div class="lib-error" id="disclaimerError" style="display:none;max-width:100%;margin-top:14px;"></div>
+  </div>
+
+  <div id="mainApp">
+  <h1>完税证明智能整理</h1>
+  <div class="subtitle">拖入或添加多个 PDF / ZIP，确认齐全后一次整理</div>
+
+  <div class="upload-area" id="dropZone">
+    <div class="upload-icon">📄</div>
+    <div class="upload-text">拖拽文件到此处</div>
+    <div class="upload-hint">支持一次拖入多个 PDF，也可多次添加后再点「开始整理」</div>
+    <button type="button" class="pick-link" id="btnPickFiles">或点击选择文件（可多选）</button>
+    <input type="file" id="fileInput" accept=".zip,.pdf,application/zip,application/pdf" multiple>
+  </div>
+
+  <div class="queue-panel" id="queuePanel">
+    <div class="queue-header">
+      <span>待整理 <span id="queueCount">0</span> 个文件</span>
+      <button type="button" class="btn btn-ghost" id="btnClearQueue" style="padding:6px 12px;font-size:13px;">清空列表</button>
+    </div>
+    <ul class="queue-list" id="queueList"></ul>
+    <div class="queue-actions">
+      <button type="button" class="btn btn-primary" id="btnProcess">开始整理</button>
+      <button type="button" class="btn btn-ghost" id="btnAddMore">继续添加</button>
+    </div>
+  </div>
+
+  <div class="lib-error" id="libError"></div>
+  <div class="processing-hint" id="processingHint">正在解析，请稍候…</div>
+
+  <div class="result-box" id="resultBox">
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px; flex-wrap:wrap; gap:8px;">
+      <div style="font-size:18px; font-weight:700;">整理结果</div>
+      <div id="summary" style="font-size:14px; color:#64748b;"></div>
+    </div>
+
+    <div class="judgment-section" id="judgmentSection" style="display:none;">
+      <div class="judgment-title" id="judgmentTitle">—</div>
+      <div class="judgment-detail" id="judgmentDetail"></div>
+      <div class="judgment-meta" id="judgmentMeta"></div>
+    </div>
+
+    <div class="taxpayer-card" id="taxpayerCard">
+      <div class="taxpayer-item">
+        <label>纳税人名称</label>
+        <span id="taxpayerName">—</span>
+      </div>
+      <div class="taxpayer-item">
+        <label>纳税人识别号</label>
+        <span id="taxpayerId">—</span>
+      </div>
+      <div class="taxpayer-item">
+        <label>来源文件</label>
+        <span id="sourceFiles">—</span>
+      </div>
+    </div>
+
+    <div class="completeness-card" id="completenessSection">
+      <h3>完税证明完整性</h3>
+      <div id="completenessBody">—</div>
+    </div>
+
+    <div class="error-box" id="errorBox"></div>
+
+    <table id="resultTable">
+      <thead>
+        <tr>
+          <th style="width:32%">税款所属时期</th>
+          <th style="width:28%">税种</th>
+          <th style="width:20%">实缴金额</th>
+        </tr>
+      </thead>
+      <tbody id="resultBody"></tbody>
+    </table>
+
+    <div class="removed-section" id="removedSection" style="display:none;">
+      <div class="removed-title">已剔除（负数 / 滞纳金 / 罚没收入 / 所属期超3个月等）</div>
+      <div id="removedList"></div>
+    </div>
+  </div>
+  </div>
+</div>
+
+<script>
+const PDFJS_WORKER =
+  'https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.worker.min.js';
+
+let dropZone, fileInput, resultBox, resultBody, removedSection, removedList;
+let summary, taxpayerNameEl, taxpayerIdEl, sourceFilesEl, errorBox;
+let libErrorEl, processingHintEl, queuePanel, queueList, queueCountEl;
+let btnProcess, btnClearQueue, btnPickFiles, btnAddMore;
+let judgmentSection, judgmentTitle, judgmentDetail, judgmentMeta;
+let completenessSection, completenessBody;
+/** @type {File[]} */
+let pendingFiles = [];
+let judgmentEnabled = false;
+const MAX_PDFS = 50;
+
+const PERIOD_RE =
+  /(\d{4})\s*[-/年.]\s*(\d{1,2})\s*[-/月.]?\s*(\d{1,2})?\s*(?:至|—|–|~|-)\s*(\d{4})\s*[-/年.]\s*(\d{1,2})\s*[-/月.]?\s*(\d{1,2})?/;
+const PERIOD_RE_CN =
+  /(\d{4})\s*年\s*(\d{1,2})\s*月\s*(\d{1,2})\s*日?\s*(?:至|—|–|~|-)\s*(\d{4})\s*年\s*(\d{1,2})\s*月\s*(\d{1,2})\s*日?/;
+const AMOUNT_RE = /-?\d{1,3}(?:,\d{3})*\.\d{2}|-?\d+\.\d{2}/g;
+const HEADER_SKIP =
+  /^(税种|税款所属|实缴|入\s*\(?退?\)?\s*库|序号|No\.|金额|原凭证|填发|证明|合计|备注|税务机关|盖章|金额合计|小写|大写|编号)/i;
+/** 非正常税款：罚没、罚款等（整期整税种剔除） */
+const PENALTY_TAX_RE = /罚没|罚款|没收收入/;
+
+function ensurePdfJs() {
+  if (typeof pdfjsLib === 'undefined') {
+    throw new Error('PDF 解析库未加载，请联网后刷新页面重试');
+  }
+  if (!pdfjsLib.GlobalWorkerOptions.workerSrc) {
+    pdfjsLib.GlobalWorkerOptions.workerSrc = PDFJS_WORKER;
+  }
+}
+
+function showLibError(msg) {
+  if (libErrorEl) {
+    libErrorEl.style.display = 'block';
+    libErrorEl.textContent = msg;
+  }
+}
+
+function initDisclaimerGate() {
+  const gate = document.getElementById('disclaimerGate');
+  const mainApp = document.getElementById('mainApp');
+  const agree = document.getElementById('disclaimerAgree');
+  const btnAccept = document.getElementById('btnAcceptDisclaimer');
+  const btnSkip = document.getElementById('btnSkipDisclaimer');
+
+  function enterApp(withJudgment) {
+    judgmentEnabled = withJudgment;
+    gate.style.display = 'none';
+    mainApp.style.display = 'block';
+  }
+
+  const disclaimerError = document.getElementById('disclaimerError');
+
+  btnAccept.addEventListener('click', () => {
+    if (!agree.checked) {
+      if (disclaimerError) {
+        disclaimerError.style.display = 'block';
+        disclaimerError.textContent = '请先勾选免责声明后再进入';
+      }
+      return;
+    }
+    if (disclaimerError) disclaimerError.style.display = 'none';
+    enterApp(true);
+  });
+
+  btnSkip.addEventListener('click', () => {
+    enterApp(false);
+  });
+}
+
+function initApp() {
+  dropZone = document.getElementById('dropZone');
+  fileInput = document.getElementById('fileInput');
+  resultBox = document.getElementById('resultBox');
+  resultBody = document.getElementById('resultBody');
+  removedSection = document.getElementById('removedSection');
+  removedList = document.getElementById('removedList');
+  summary = document.getElementById('summary');
+  taxpayerNameEl = document.getElementById('taxpayerName');
+  taxpayerIdEl = document.getElementById('taxpayerId');
+  sourceFilesEl = document.getElementById('sourceFiles');
+  errorBox = document.getElementById('errorBox');
+  libErrorEl = document.getElementById('libError');
+  processingHintEl = document.getElementById('processingHint');
+
+  if (typeof JSZip === 'undefined') {
+    showLibError('压缩包组件（JSZip）未加载，请联网后刷新页面。');
+    return;
+  }
+  if (typeof pdfjsLib === 'undefined') {
+    showLibError('PDF 组件（pdf.js）未加载，请联网后刷新页面。');
+    return;
+  }
+  ensurePdfJs();
+
+  queuePanel = document.getElementById('queuePanel');
+  queueList = document.getElementById('queueList');
+  queueCountEl = document.getElementById('queueCount');
+  btnProcess = document.getElementById('btnProcess');
+  btnClearQueue = document.getElementById('btnClearQueue');
+  btnPickFiles = document.getElementById('btnPickFiles');
+  btnAddMore = document.getElementById('btnAddMore');
+  judgmentSection = document.getElementById('judgmentSection');
+  judgmentTitle = document.getElementById('judgmentTitle');
+  judgmentDetail = document.getElementById('judgmentDetail');
+  judgmentMeta = document.getElementById('judgmentMeta');
+  completenessSection = document.getElementById('completenessSection');
+  completenessBody = document.getElementById('completenessBody');
+
+  btnPickFiles.addEventListener('click', (e) => {
+    e.stopPropagation();
+    fileInput.click();
+  });
+  btnAddMore.addEventListener('click', (e) => {
+    e.stopPropagation();
+    fileInput.click();
+  });
+
+  fileInput.addEventListener('change', (e) => {
+    addFilesToQueue(e.target.files);
+    fileInput.value = '';
+  });
+
+  btnClearQueue.addEventListener('click', clearQueue);
+  btnProcess.addEventListener('click', () => processAllPending());
+
+  ['dragenter', 'dragover'].forEach((ev) => {
+    dropZone.addEventListener(ev, (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      dropZone.classList.add('dragover');
+    });
+  });
+  ['dragleave', 'drop'].forEach((ev) => {
+    dropZone.addEventListener(ev, (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      if (ev === 'drop') {
+        addFilesToQueue(e.dataTransfer.files);
+      }
+      dropZone.classList.remove('dragover');
+    });
+  });
+
+  initDisclaimerGate();
+}
+
+window.addEventListener('load', initApp);
+
+function isAcceptedFile(file) {
+  const n = file.name.toLowerCase();
+  return n.endsWith('.pdf') || n.endsWith('.zip');
+}
+
+function fileKey(file) {
+  return `${file.name}|${file.size}|${file.lastModified}`;
+}
+
+function addFilesToQueue(fileList) {
+  if (!fileList || !fileList.length) return;
+
+  const rejected = [];
+  const added = [];
+
+  for (const file of fileList) {
+    if (!isAcceptedFile(file)) {
+      rejected.push(file.name);
+      continue;
+    }
+    const key = fileKey(file);
+    if (pendingFiles.some((f) => fileKey(f) === key)) continue;
+    pendingFiles.push(file);
+    added.push(file.name);
+  }
+
+  if (rejected.length) {
+    showLibError(`已忽略非 PDF/ZIP 文件：${rejected.join('、')}`);
+  } else if (libErrorEl && added.length) {
+    libErrorEl.style.display = 'none';
+  }
+
+  if (added.length) {
+    resultBox.style.display = 'none';
+    renderQueue();
+  }
+}
+
+function renderQueue() {
+  queueList.innerHTML = '';
+  pendingFiles.forEach((file, index) => {
+    const li = document.createElement('li');
+    li.className = 'queue-item';
+    li.innerHTML = `
+      <span class="queue-item-name" title="${escapeHtml(file.name)}">${index + 1}. ${escapeHtml(file.name)}</span>
+      <button type="button" class="queue-item-remove" data-index="${index}" aria-label="移除">×</button>
+    `;
+    li.querySelector('.queue-item-remove').addEventListener('click', () => {
+      pendingFiles.splice(index, 1);
+      renderQueue();
+    });
+    queueList.appendChild(li);
+  });
+
+  const n = pendingFiles.length;
+  queueCountEl.textContent = String(n);
+  queuePanel.classList.toggle('visible', n > 0);
+  btnProcess.disabled = n === 0;
+}
+
+function clearQueue() {
+  pendingFiles = [];
+  renderQueue();
+  resultBox.style.display = 'none';
+  if (libErrorEl) libErrorEl.style.display = 'none';
+}
+
+async function collectPdfsFromFiles(files) {
+  const pdfs = [];
+  for (const file of files) {
+    const lower = file.name.toLowerCase();
+    if (lower.endsWith('.zip')) {
+      const fromZip = await extractPdfsFromZip(file);
+      for (const p of fromZip) {
+        pdfs.push({ name: `${file.name} / ${p.name}`, data: p.data });
+      }
+    } else if (lower.endsWith('.pdf')) {
+      pdfs.push({ name: file.name, data: await file.arrayBuffer() });
+    }
+  }
+  pdfs.sort((a, b) =>
+    a.name.localeCompare(b.name, 'zh-CN', { numeric: true, sensitivity: 'base' })
+  );
+  return pdfs;
+}
+
+async function processAllPending() {
+  if (!pendingFiles.length) return;
+
+  const filesToProcess = [...pendingFiles];
+  processingHintEl.style.display = 'block';
+  btnProcess.disabled = true;
+
+  try {
+    await processFiles(filesToProcess);
+    pendingFiles = [];
+    renderQueue();
+  } finally {
+    processingHintEl.style.display = 'none';
+    btnProcess.disabled = pendingFiles.length === 0;
+  }
+}
+
+function clearResults() {
+  resultBox.style.display = 'block';
+  resultBody.innerHTML = '';
+  removedList.innerHTML = '';
+  removedSection.style.display = 'none';
+  errorBox.style.display = 'none';
+  errorBox.textContent = '';
+  if (judgmentSection) judgmentSection.style.display = 'none';
+  if (completenessSection) {
+    completenessSection.style.display = 'none';
+    completenessSection.className = 'completeness-card';
+  }
+  taxpayerNameEl.textContent = '—';
+  taxpayerIdEl.textContent = '—';
+  sourceFilesEl.textContent = '—';
+  summary.textContent = '正在解析 PDF…';
+}
+
+function isPenaltyTaxType(type) {
+  return PENALTY_TAX_RE.test(type || '');
+}
+
+function isPeriodSpanTooLong(periodStr) {
+  const range = parsePeriodRange(periodStr);
+  return !!range && periodSpanMonths(range) > 3;
+}
+
+function pad2(n) {
+  return String(n).padStart(2, '0');
+}
+
+function normalizePeriod(y1, m1, d1, y2, m2, d2) {
+  const day1 = d1 && d1 !== '0' ? pad2(d1) : '01';
+  const day2 = d2 && d2 !== '0' ? pad2(d2) : '28';
+  return `${y1}-${pad2(m1)}-${day1} 至 ${y2}-${pad2(m2)}-${day2}`;
+}
+
+function periodStartKey(period) {
+  const m = period.match(/^(\d{4})-(\d{2})-(\d{2})/);
+  return m ? `${m[1]}${m[2]}${m[3]}` : period;
+}
+
+function parseAmount(str) {
+  return parseFloat(String(str).replace(/,/g, ''));
+}
+
+function groupByY(items, tolerance) {
+  const sorted = [...items].sort((a, b) => b.y - a.y);
+  const rows = [];
+  for (const item of sorted) {
+    let row = rows.find((r) => Math.abs(r.y - item.y) <= tolerance);
+    if (!row) {
+      row = { y: item.y, items: [] };
+      rows.push(row);
+    }
+    row.items.push(item);
+  }
+  return rows.map((r) => {
+    r.items.sort((a, b) => a.x - b.x);
+    return r.items;
+  });
+}
+
+/** 文书式标准表头：税种 | 税款所属时期 | 入（退）库日期 | 实缴（退）金额 */
+const WENSHU_TABLE_END = /金额合计|本凭证不作|填表人|备注\s*$/;
+
+async function pdfToLines(arrayBuffer) {
+  ensurePdfJs();
+  const pdf = await pdfjsLib.getDocument({ data: arrayBuffer.slice(0) }).promise;
+  const lines = [];
+  const pageRows = [];
+  const pagesText = [];
+
+  for (let p = 1; p <= pdf.numPages; p++) {
+    const page = await pdf.getPage(p);
+    const tc = await page.getTextContent();
+    const items = tc.items
+      .filter((it) => it.str && String(it.str).trim())
+      .map((it) => ({
+        str: String(it.str).trim(),
+        x: it.transform[4],
+        y: it.transform[5],
+      }));
+    const rowGroups = groupByY(items, 5);
+    const rows = [];
+    const pageLines = [];
+    for (const row of rowGroups) {
+      const cells = row.map((i) => i.str);
+      const line = cells.join(' ').replace(/\s+/g, ' ').trim();
+      const entry = { line, cells, items: row, page: p };
+      rows.push(entry);
+      if (line) {
+        lines.push(entry);
+        pageLines.push(line);
+      }
+    }
+    pageRows.push({ page: p, rows });
+    pagesText.push(pageLines.join('\n'));
+  }
+  return { lines, pageRows, numPages: pdf.numPages, pagesText };
+}
+
+function extractCertNumber(text) {
+  const t = String(text || '').replace(/\s+/g, ' ');
+  let m = t.match(/(\d{2}\(\d{2,6}\)\d+)\s*证明\s*(\d+)/);
+  if (m) return `${m[1]}证明${m[2]}`;
+  m = t.match(/(\d{2}\(\d{2,6}\)\d+)\s+证明\s+(\d+)/);
+  if (m) return `${m[1]}证明${m[2]}`;
+  m = t.match(/证明\s*(?:No\.?|NO\.?|№)?\s*(\d{8,})/i);
+  if (m) return `证明${m[1]}`;
+  m = t.match(/No\.?\s*(\d{8,})\s*证明/i);
+  if (m) return `证明${m[1]}`;
+  return '';
+}
+
+function extractPageInfo(text) {
+  const m = String(text || '').match(/第\s*(\d+)\s*页\s*[,，]?\s*共\s*(\d+)\s*页/);
+  if (!m) return null;
+  return { current: parseInt(m[1], 10), total: parseInt(m[2], 10) };
+}
+
+function parseCertMetaFromPdf(numPages, pagesText, fileName) {
+  if (numPages > 1) {
+    return {
+      fileName,
+      numPages,
+      stitched: true,
+      certNo: '',
+      pageCurrent: null,
+      pageTotal: null,
+    };
+  }
+  const text = pagesText[0] || '';
+  const pageInfo = extractPageInfo(text);
+  return {
+    fileName,
+    numPages: 1,
+    stitched: false,
+    certNo: extractCertNumber(text),
+    pageCurrent: pageInfo ? pageInfo.current : null,
+    pageTotal: pageInfo ? pageInfo.total : null,
+  };
+}
+
+function validateOneCertGroup(certNo, pages) {
+  const issues = [];
+  const totalExpected = pages[0].pageTotal;
+
+  if (pages.some((p) => p.pageTotal !== totalExpected)) {
+    issues.push(`证明编号 ${certNo}：各文件标注的总页数不一致`);
+    return { issues, complete: false };
+  }
+
+  const byPage = new Map();
+  for (const p of pages) {
+    if (!byPage.has(p.pageCurrent)) byPage.set(p.pageCurrent, []);
+    byPage.get(p.pageCurrent).push(p.fileName);
+  }
+
+  const missing = [];
+  for (let i = 1; i <= totalExpected; i++) {
+    if (!byPage.has(i)) missing.push(i);
+  }
+  if (missing.length) {
+    issues.push(
+      `证明编号 ${certNo} 不完整：应共 ${totalExpected} 页，缺少第 ${missing.join('、')} 页`
+    );
+  }
+
+  for (const [pageNum, files] of byPage) {
+    if (files.length > 1) {
+      issues.push(`证明编号 ${certNo}：第 ${pageNum} 页重复（${files.join('、')}）`);
+    }
+    if (pageNum > totalExpected) {
+      issues.push(`证明编号 ${certNo}：${files[0]} 页码 ${pageNum} 超出共 ${totalExpected} 页`);
+    }
+  }
+
+  return { issues, complete: issues.length === 0 };
+}
+
+function validateCertificateCompleteness(metaList) {
+  const issues = [];
+  const warnings = [];
+  const notes = [];
+
+  for (const m of metaList) {
+    if (m.stitched) {
+      issues.push(
+        `${m.fileName}：为多页拼接 PDF（共 ${m.numPages} 页），材料不符合规范，请重新上传完税证明原件`
+      );
+    }
+  }
+
+  const singles = metaList.filter((m) => !m.stitched);
+  const checkable = singles.filter((m) => m.certNo && m.pageCurrent && m.pageTotal);
+  const unreadable = singles.filter((m) => !m.certNo || !m.pageCurrent || !m.pageTotal);
+
+  for (const m of unreadable) {
+    issues.push(
+      `${m.fileName}：未能识别证明编号或「第 X 页/共 Y 页」${m.certNo ? '' : '（缺证明编号）'}`
+    );
+  }
+
+  const byCert = new Map();
+  for (const m of checkable) {
+    if (!byCert.has(m.certNo)) byCert.set(m.certNo, []);
+    byCert.get(m.certNo).push(m);
+  }
+
+  const groupResults = [];
+  for (const [certNo, pages] of byCert) {
+    const gr = validateOneCertGroup(certNo, pages);
+    groupResults.push({ certNo, ...gr });
+    issues.push(...gr.issues);
+  }
+
+  const completeGroups = groupResults.filter((g) => g.complete);
+  if (completeGroups.length > 1) {
+    warnings.push(
+      `检测到同一纳税人 ${completeGroups.length} 份均完整的完税证明（证明编号：${completeGroups.map((g) => g.certNo).join('、')}），已合并整理；请确认是否仅需提交其中一份。`
+    );
+  } else if (byCert.size > 1 && completeGroups.length < byCert.size) {
+    warnings.push(
+      `检测到 ${byCert.size} 份不同证明编号，其中部分不完整，请核对材料。`
+    );
+  }
+
+  return {
+    ok: issues.length === 0,
+    issues,
+    warnings,
+    notes,
+    certNos: [...byCert.keys()],
+    multiComplete: completeGroups.length > 1,
+  };
+}
+
+function renderCompleteness(result) {
+  if (!completenessSection || !completenessBody) return;
+  completenessSection.style.display = 'block';
+  const hasWarn = (result.warnings && result.warnings.length) || result.notes.length;
+  completenessSection.className =
+    'completeness-card ' + (!result.ok ? 'bad' : hasWarn ? 'warn' : 'ok');
+
+  let html = '';
+  if (!result.ok) {
+    html += '<p><strong>异常：完税证明不完整或格式不符合要求</strong></p>';
+    html += '<p>材料不符合规范，请重新上传完税证明原件。</p>';
+  } else if (result.multiComplete) {
+    html += '<p><strong>已整理</strong>：多份完整证明已合并展示，请阅下方黄色提醒。</p>';
+  } else if (result.certNos.length) {
+    html += `<p><strong>完整</strong>：证明编号 ${escapeHtml(result.certNos.join('、'))}，页码齐全。</p>`;
+  } else {
+    html += '<p>未识别到可校验的证明编号。</p>';
+  }
+
+  if (result.warnings && result.warnings.length) {
+    html += '<p style="margin-top:10px;color:#92400e"><strong>提醒</strong></p><ul>';
+    for (const w of result.warnings) html += `<li>${escapeHtml(w)}</li>`;
+    html += '</ul>';
+  }
+  if (result.issues.length) {
+    html += '<p style="margin-top:10px"><strong>问题</strong></p><ul>';
+    for (const x of result.issues) html += `<li>${escapeHtml(x)}</li>`;
+    html += '</ul>';
+  }
+  if (result.notes.length) {
+    html += '<p style="margin-top:8px;color:#64748b">说明</p><ul>';
+    for (const n of result.notes) html += `<li>${escapeHtml(n)}</li>`;
+    html += '</ul>';
+  }
+  completenessBody.innerHTML = html;
+}
+
+function validateTaxpayerConsistency(metaList, taxpayerChecks) {
+  const issues = [];
+  const names = new Set(taxpayerChecks.map((t) => t.name).filter(Boolean));
+  const ids = new Set(taxpayerChecks.map((t) => t.id).filter(Boolean));
+
+  if (names.size > 1) {
+    issues.push(`纳税人名称不一致：${[...names].join(' / ')}`);
+  }
+  if (ids.size > 1) {
+    issues.push(`纳税人识别号不一致：${[...ids].join(' / ')}`);
+  }
+  return issues;
+}
+
+function matchPeriod(text) {
+  if (!text) return null;
+  let m = text.match(PERIOD_RE);
+  if (m) {
+    return normalizePeriod(m[1], m[2], m[3], m[4], m[5], m[6]);
+  }
+  m = text.match(PERIOD_RE_CN);
+  if (m) {
+    return normalizePeriod(m[1], m[2], m[3], m[4], m[5], m[6]);
+  }
+  return null;
+}
+
+function baseTaxType(type) {
+  return type.replace(/[\(（]\s*滞纳金\s*[\)）]/g, '').trim();
+}
+
+function findWenshuHeader(rows) {
+  for (let i = 0; i < rows.length; i++) {
+    const line = rows[i].line;
+    if (/税种/.test(line) && /税款所属/.test(line) && /实缴|金额/.test(line)) {
+      return i;
+    }
+  }
+  return -1;
+}
+
+function buildColumnAnchors(headerItems) {
+  const anchors = [];
+  const push = (key, re) => {
+    for (const it of headerItems) {
+      if (re.test(it.str)) {
+        anchors.push({ key, x: it.x });
+        return;
+      }
+    }
+  };
+  push('type', /^税种$/);
+  push('period', /税款所属/);
+  push('payDate', /入.*库/);
+  push('amount', /实缴|实缴（退）|实缴\(退\)/);
+  if (!anchors.find((a) => a.key === 'amount')) {
+    push('amount', /金额/);
+  }
+  anchors.sort((a, b) => a.x - b.x);
+  return anchors;
+}
+
+function assignColumn(x, anchors, str) {
+  if (!anchors.length) return 'type';
+  if (/至|—|–|~/.test(str)) return 'period';
+  if (/^\d{4}-\d{2}-\d{2}$/.test(str)) {
+    const periodA = anchors.find((a) => a.key === 'period');
+    const payA = anchors.find((a) => a.key === 'payDate');
+    if (periodA && payA) {
+      return x < (periodA.x + payA.x) / 2 ? 'period' : 'payDate';
+    }
+    if (periodA) return 'period';
+  }
+  if (/^\d{1,2}$/.test(str) && anchors.find((a) => a.key === 'period')) {
+    return 'period';
+  }
+  for (let i = anchors.length - 1; i >= 0; i--) {
+    if (x >= anchors[i].x - 20) return anchors[i].key;
+  }
+  return anchors[0].key;
+}
+
+/** 从税种字符串里去掉误并入的所属时期日期 */
+function stripDatesFromTaxType(raw) {
+  if (!raw) return '';
+  return raw
+    .replace(/\d{4}-\d{2}-\d{2}\s*至\s*\d{4}-\d{2}-\d{2}/g, '')
+    .replace(/\d{4}-\d{2}-\d{2}/g, '')
+    .replace(
+      /\d{4}\s*年\s*\d{1,2}\s*月\s*\d{1,2}\s*日?\s*至\s*\d{4}\s*年\s*\d{1,2}\s*月\s*\d{1,2}\s*日?/g,
+      ''
+    )
+    .replace(/\d{4}\s*年\s*\d{1,2}\s*月\s*\d{1,2}\s*日?/g, '')
+    .replace(/[\s至—–~\-]+$/g, '')
+    .trim();
+}
+
+function resolvePeriodFromRow(line, buckets) {
+  const parts = [
+    buckets.type.join(' '),
+    buckets.period.join(' '),
+    line,
+  ].join(' ');
+  return matchPeriod(parts) || matchPeriod(line);
+}
+
+function resolveTaxType(line, period, buckets, cells) {
+  let type = stripDatesFromTaxType(cleanTaxType(buckets.type.join(' ')));
+  if (type && type.length >= 2 && !HEADER_SKIP.test(type)) return type;
+
+  type = stripDatesFromTaxType(
+    extractTaxTypeFromRow(line, period, cells || [])
+  );
+  if (type && type.length >= 2) return type;
+
+  let rest = line;
+  if (period) rest = rest.replace(period, '');
+  rest = rest.replace(AMOUNT_RE, '').trim();
+  type = stripDatesFromTaxType(cleanTaxType(rest));
+  return type;
+}
+
+function parseWenshuTable(pageRows) {
+  const records = [];
+  const seen = new Set();
+
+  for (const { rows } of pageRows) {
+    const hi = findWenshuHeader(rows);
+    if (hi < 0) continue;
+
+    const anchors = buildColumnAnchors(rows[hi].items);
+    if (anchors.length < 2) continue;
+
+    for (let r = hi + 1; r < rows.length; r++) {
+      const { line, items } = rows[r];
+      if (!line || WENSHU_TABLE_END.test(line)) break;
+      if (HEADER_SKIP.test(line) && !matchPeriod(line)) continue;
+      if (/^第\s*\d+\s*页/.test(line)) continue;
+
+      const buckets = { type: [], period: [], payDate: [], amount: [] };
+      const cellStrs = items.map((i) => i.str);
+      for (const it of items) {
+        buckets[assignColumn(it.x, anchors, it.str)].push(it.str);
+      }
+
+      const period = resolvePeriodFromRow(line, buckets);
+      if (!period) continue;
+
+      const type = resolveTaxType(line, period, buckets, cellStrs);
+      if (!type || type.length < 2 || HEADER_SKIP.test(type)) continue;
+
+      const amountSource = buckets.amount.join(' ') || line;
+      const amounts = [...amountSource.matchAll(AMOUNT_RE)].map((m) => m[0]);
+      if (amounts.length === 0) {
+        const fromLine = [...line.matchAll(AMOUNT_RE)].map((m) => m[0]);
+        if (fromLine.length) amounts.push(fromLine[fromLine.length - 1]);
+      }
+      if (amounts.length === 0) continue;
+
+      const amount = parseAmount(amounts[amounts.length - 1]);
+      if (Number.isNaN(amount)) continue;
+
+      const key = `${period}|${type}|${amount}`;
+      if (seen.has(key)) continue;
+      seen.add(key);
+      records.push({ period, type, amount });
+    }
+  }
+  return records;
+}
+
+function pdfFullText(lines) {
+  return lines.map((l) => l.line).join('\n');
+}
+
+function normalizeTaxpayerName(raw) {
+  return String(raw || '')
+    .replace(/[\r\n\t]+/g, '')
+    .replace(/\s+/g, '')
+    .replace(/[:：]\s*$/, '')
+    .trim();
+}
+
+function parseTaxpayer(fullText) {
+  let name = '';
+  let id = '';
+
+  // 必须匹配到「纳税人识别号」整段标签，不能用 [^纳税人识别号]（公司名里的「信」等字会误截断）
+  const namePatterns = [
+    /纳税人名称\s*[:：]?\s*([\s\S]+?)\s*纳税人识别号/,
+    /纳税人名称\s*[:：]?\s*([\s\S]+?)\s*统一社会信用代码/,
+    /名\s*称\s*[:：]?\s*([\s\S]+?)\s*纳税人识别号/,
+  ];
+  for (const re of namePatterns) {
+    const m = fullText.match(re);
+    if (m) {
+      name = normalizeTaxpayerName(m[1]);
+      if (name.length >= 2) break;
+    }
+  }
+
+  const idPatterns = [
+    /纳税人识别号\s*[:：]?\s*([0-9A-Za-z]{15,22})/,
+    /统一社会信用代码\s*[:：]?\s*([0-9A-Z]{18})/,
+    /识别号\s*[:：]?\s*([0-9A-Za-z]{15,22})/,
+  ];
+  for (const re of idPatterns) {
+    const m = fullText.match(re);
+    if (m) {
+      id = m[1].trim();
+      break;
+    }
+  }
+
+  return { name, id };
+}
+
+function cleanTaxType(raw) {
+  if (!raw) return '';
+  return stripDatesFromTaxType(
+    raw
+      .replace(/^\d+\s*/, '')
+      .replace(/纳税人名称.*$/i, '')
+      .replace(/[:：].*$/, '')
+      .replace(/\s+/g, ' ')
+      .trim()
+  );
+}
+
+function extractTaxTypeFromRow(line, periodStr, cells) {
+  const periodStart = periodStr.slice(0, 10);
+  let periodCellIdx = -1;
+  for (let i = 0; i < cells.length; i++) {
+    if (cells[i].includes(periodStart) || matchPeriod(cells[i])) {
+      periodCellIdx = i;
+      break;
+    }
+  }
+  if (periodCellIdx > 0) {
+    const t = cleanTaxType(cells.slice(0, periodCellIdx).join(' '));
+    if (t && !HEADER_SKIP.test(t)) return t;
+  }
+
+  const idx = line.indexOf(periodStart);
+  if (idx > 0) {
+    const t = cleanTaxType(line.slice(0, idx));
+    if (t && !HEADER_SKIP.test(t)) return t;
+  }
+
+  const beforePeriod = line.split(periodStart)[0];
+  const t = cleanTaxType(beforePeriod);
+  if (t && !HEADER_SKIP.test(t)) return t;
+
+  return '';
+}
+
+function parseRecordsFromLines(lines, pageRows) {
+  const wenshu = parseWenshuTable(pageRows);
+  if (wenshu.length > 0) return wenshu;
+
+  const records = [];
+  const seen = new Set();
+
+  for (const { line, cells } of lines) {
+    if (!line || HEADER_SKIP.test(line)) continue;
+    if (/^第\s*\d+\s*页/.test(line)) continue;
+
+    const period = matchPeriod(line);
+    if (!period) continue;
+
+    const amounts = [...line.matchAll(AMOUNT_RE)].map((m) => m[0]);
+    if (amounts.length === 0) continue;
+
+    const amount = parseAmount(amounts[amounts.length - 1]);
+    if (Number.isNaN(amount)) continue;
+
+    let type = stripDatesFromTaxType(extractTaxTypeFromRow(line, period, cells));
+    if (!type || type.length < 2) continue;
+    if (/^\d+(\.\d+)?$/.test(type)) continue;
+
+    const key = `${period}|${type}|${amount}`;
+    if (seen.has(key)) continue;
+    seen.add(key);
+
+    records.push({ period, type, amount });
+  }
+
+  return records;
+}
+
+/** 同期同基础税种：负数、滞纳金、罚没、所属期超3个月 → 整组剔除 */
+function buildBlacklist(records) {
+  const contaminatedBase = new Set();
+  const blacklist = new Set();
+
+  for (const r of records) {
+    const exact = r.period + '|' + r.type;
+    const base = r.period + '|' + baseTaxType(r.type);
+    if (
+      r.amount < 0 ||
+      /滞纳金/.test(r.type) ||
+      isPenaltyTaxType(r.type) ||
+      isPeriodSpanTooLong(r.period)
+    ) {
+      contaminatedBase.add(base);
+      blacklist.add(exact);
+    }
+  }
+
+  for (const r of records) {
+    const exact = r.period + '|' + r.type;
+    const base = r.period + '|' + baseTaxType(r.type);
+    if (contaminatedBase.has(base)) {
+      blacklist.add(exact);
+    }
+  }
+  return blacklist;
+}
+
+function filterAndSort(records, blacklist) {
+  return records
+    .filter((r) => !blacklist.has(r.period + '|' + r.type))
+    .sort((a, b) => {
+      const cmp = periodStartKey(a.period).localeCompare(periodStartKey(b.period));
+      if (cmp !== 0) return cmp;
+      return a.type.localeCompare(b.type, 'zh-CN');
+    });
+}
+
+async function parsePdfBuffer(arrayBuffer, fileName) {
+  const { lines, pageRows, numPages, pagesText } = await pdfToLines(arrayBuffer);
+  const fullText = pdfFullText(lines);
+  const taxpayer = parseTaxpayer(fullText);
+  const records = parseRecordsFromLines(lines, pageRows);
+  const certMeta = parseCertMetaFromPdf(numPages, pagesText, fileName);
+  return { fileName, taxpayer, records, fullText, certMeta };
+}
+
+async function extractPdfsFromZip(file) {
+  const zip = await JSZip.loadAsync(file);
+  const entries = [];
+  zip.forEach((relativePath, zipEntry) => {
+    if (!zipEntry.dir && relativePath.toLowerCase().endsWith('.pdf')) {
+      entries.push({ path: relativePath, entry: zipEntry });
+    }
+  });
+  entries.sort((a, b) => a.path.localeCompare(b.path));
+  const pdfs = [];
+  for (const { path, entry } of entries) {
+    const buf = await entry.async('arraybuffer');
+    pdfs.push({ name: path.split(/[/\\]/).pop() || path, data: buf });
+  }
+  return pdfs;
+}
+
+async function processFiles(files) {
+  clearResults();
+
+  let pdfList = [];
+
+  try {
+    pdfList = await collectPdfsFromFiles(files);
+
+    if (pdfList.length === 0) {
+      summary.textContent = '未找到可解析的 PDF';
+      resultBody.innerHTML =
+        '<tr><td colspan="3" class="empty-hint">压缩包内无 PDF，或未添加有效文件</td></tr>';
+      return;
+    }
+
+    if (pdfList.length > MAX_PDFS) {
+      errorBox.style.display = 'block';
+      errorBox.textContent = `共 ${pdfList.length} 个 PDF，仅处理前 ${MAX_PDFS} 个（按文件名排序）。`;
+      pdfList = pdfList.slice(0, MAX_PDFS);
+    }
+
+    sourceFilesEl.textContent = pdfList.map((p) => p.name).join('、');
+
+    const allRecords = [];
+    let taxpayer = { name: '', id: '' };
+    const warnings = [];
+    const certMetaList = [];
+    const taxpayerChecks = [];
+
+    for (const pdf of pdfList) {
+      let parsed;
+      try {
+        parsed = await parsePdfBuffer(pdf.data, pdf.name);
+      } catch (err) {
+        warnings.push(`${pdf.name} 解析失败：${err.message}`);
+        continue;
+      }
+
+      if (parsed.certMeta) certMetaList.push(parsed.certMeta);
+      if (parsed.taxpayer.name || parsed.taxpayer.id) {
+        taxpayerChecks.push({
+          fileName: pdf.name,
+          name: parsed.taxpayer.name,
+          id: parsed.taxpayer.id,
+        });
+      }
+
+      if (parsed.records.length === 0) {
+        warnings.push(`${pdf.name} 未识别到税款明细行`);
+      }
+
+      if (
+        parsed.taxpayer.name &&
+        (!taxpayer.name || parsed.taxpayer.name.length > taxpayer.name.length)
+      ) {
+        taxpayer.name = parsed.taxpayer.name;
+      }
+      if (!taxpayer.id && parsed.taxpayer.id) taxpayer.id = parsed.taxpayer.id;
+
+      allRecords.push(...parsed.records);
+    }
+
+    taxpayerNameEl.textContent = taxpayer.name || '（未能识别）';
+    taxpayerIdEl.textContent = taxpayer.id || '（未能识别）';
+
+    const completeness = validateCertificateCompleteness(certMetaList);
+    renderCompleteness(completeness);
+
+    const taxpayerIssues = validateTaxpayerConsistency(certMetaList, taxpayerChecks);
+    const allIssues = [...completeness.issues, ...taxpayerIssues];
+
+    if (warnings.length || completeness.notes.length) {
+      const parts = [...warnings, ...completeness.notes];
+      if (allIssues.length) {
+        errorBox.style.display = 'block';
+        errorBox.textContent = allIssues.join('；') + '；' + parts.join('；');
+      } else if (parts.length) {
+        errorBox.style.display = 'block';
+        errorBox.textContent = parts.join('；');
+      }
+    } else if (allIssues.length) {
+      errorBox.style.display = 'block';
+      errorBox.textContent = allIssues.join('；');
+    }
+
+    if (allRecords.length === 0) {
+      summary.textContent = '未能从 PDF 提取税款记录';
+      resultBody.innerHTML =
+        '<tr><td colspan="3" class="empty-hint">请确认 PDF 为电子版完税证明（非纯扫描件）</td></tr>';
+      return;
+    }
+
+    const blacklist = buildBlacklist(allRecords);
+    const validRecords = filterAndSort(allRecords, blacklist);
+
+    resultBody.innerHTML = '';
+    if (validRecords.length === 0) {
+      resultBody.innerHTML =
+        '<tr><td colspan="3" class="empty-hint">过滤后无剩余记录</td></tr>';
+    } else {
+      for (const r of validRecords) {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td class="period">${escapeHtml(r.period)}</td>
+          <td>${escapeHtml(r.type)}</td>
+          <td class="amount">¥${r.amount.toFixed(2)}</td>
+        `;
+        resultBody.appendChild(tr);
+      }
+    }
+
+    if (blacklist.size > 0) {
+      removedSection.style.display = 'block';
+      const sortedKeys = [...blacklist].sort((a, b) => a.localeCompare(b, 'zh-CN'));
+      for (const key of sortedKeys) {
+        const chip = document.createElement('span');
+        chip.className = 'removed-chip';
+        chip.textContent = key.replace('|', ' · ');
+        removedList.appendChild(chip);
+      }
+    }
+
+    summary.textContent = `共 ${validRecords.length} 条有效记录，原始 ${allRecords.length} 条，剔除 ${blacklist.size} 个异常组合`;
+
+    if (judgmentEnabled && validRecords.length > 0) {
+      renderJudgment(evaluateEligibility(validRecords, new Date()));
+    }
+  } catch (err) {
+    summary.textContent = '处理失败';
+    errorBox.style.display = 'block';
+    errorBox.textContent = err.message || String(err);
+    resultBody.innerHTML =
+      '<tr><td colspan="3" class="empty-hint">处理出错</td></tr>';
+  }
+}
+
+function escapeHtml(s) {
+  return String(s)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;');
+}
+
+function parsePeriodRange(periodStr) {
+  const m = String(periodStr).match(
+    /^(\d{4})-(\d{2})-(\d{2})\s*至\s*(\d{4})-(\d{2})-(\d{2})/
+  );
+  if (!m) return null;
+  return {
+    start: new Date(+m[1], +m[2] - 1, +m[3]),
+    end: new Date(+m[4], +m[5] - 1, +m[6]),
+  };
+}
+
+function monthKeyFromParts(y, m) {
+  return `${y}-${pad2(m)}`;
+}
+
+function monthKeyFromDate(d) {
+  return monthKeyFromParts(d.getFullYear(), d.getMonth() + 1);
+}
+
+function shiftMonthKey(key, delta) {
+  const [y, m] = key.split('-').map(Number);
+  const d = new Date(y, m - 1, 1);
+  d.setMonth(d.getMonth() + delta);
+  return monthKeyFromDate(d);
+}
+
+function periodSpanMonths(range) {
+  return (
+    (range.end.getFullYear() - range.start.getFullYear()) * 12 +
+    (range.end.getMonth() - range.start.getMonth()) +
+    1
+  );
+}
+
+function expandPeriodToMonthKeys(range) {
+  const keys = new Set();
+  let y = range.start.getFullYear();
+  let m = range.start.getMonth();
+  const endY = range.end.getFullYear();
+  const endM = range.end.getMonth();
+  while (y < endY || (y === endY && m <= endM)) {
+    keys.add(monthKeyFromParts(y, m + 1));
+    m++;
+    if (m > 11) {
+      m = 0;
+      y++;
+    }
+  }
+  return keys;
+}
+
+function getSubmitContext(refDate) {
+  const n1 = shiftMonthKey(monthKeyFromDate(refDate), -1);
+  const n2 = shiftMonthKey(monthKeyFromDate(refDate), -2);
+  const [y, mo] = monthKeyFromDate(refDate).split('-');
+  return {
+    refDate,
+    refLabel: `${y}年${mo}月${refDate.getDate()}日`,
+    n1Key: n1,
+    n2Key: n2,
+    n1Label: formatMonthLabel(n1),
+    n2Label: formatMonthLabel(n2),
+  };
+}
+
+function formatMonthLabel(key) {
+  const [y, m] = key.split('-');
+  return `${y}年${+m}月`;
+}
+
+function getLatestEndMonthKey(records) {
+  let max = '';
+  for (const r of records) {
+    const range = parsePeriodRange(r.period);
+    if (!range) continue;
+    const k = monthKeyFromDate(range.end);
+    if (k > max) max = k;
+  }
+  return max || null;
+}
+
+function build12MonthWindow(endMonthKey) {
+  const months = [];
+  for (let i = 11; i >= 0; i--) {
+    months.push(shiftMonthKey(endMonthKey, -i));
+  }
+  return months;
+}
+
+function getCoverageByTaxType(records) {
+  const map = new Map();
+  for (const r of records) {
+    const base = baseTaxType(r.type);
+    if (!map.has(base)) map.set(base, new Set());
+    const range = parsePeriodRange(r.period);
+    if (range) {
+      for (const k of expandPeriodToMonthKeys(range)) {
+        map.get(base).add(k);
+      }
+    }
+  }
+  return map;
+}
+
+function isQuarterLikeRange(range) {
+  const span = periodSpanMonths(range);
+  return span >= 2 && span <= 3;
+}
+
+function quarterKeyFromRange(range) {
+  const y = range.end.getFullYear();
+  const q = Math.floor(range.end.getMonth() / 3) + 1;
+  return `${y}-Q${q}`;
+}
+
+function quarterToIndex(qKey) {
+  const m = qKey.match(/^(\d{4})-Q([1-4])$/);
+  if (!m) return -1;
+  return parseInt(m[1], 10) * 4 + (parseInt(m[2], 10) - 1);
+}
+
+function findFourConsecutiveQuarters(qKeys) {
+  const indices = [...new Set(qKeys.map(quarterToIndex).filter((i) => i >= 0))].sort(
+    (a, b) => a - b
+  );
+  for (let i = 0; i <= indices.length - 4; i++) {
+    if (indices[i + 3] - indices[i] === 3) {
+      return {
+        ok: true,
+        start: indices[i],
+        end: indices[i + 3],
+      };
+    }
+  }
+  return { ok: false };
+}
+
+/** 按季申报时：最晚所属期可为「上一完整自然季度」的结束月，不要求达到 N-1 月 */
+function getMinAcceptableQuarterEndKey(refDate) {
+  const y = refDate.getFullYear();
+  const m = refDate.getMonth();
+  const qIndex = Math.floor(m / 3);
+  if (qIndex === 0) {
+    return `${y - 1}-12`;
+  }
+  return monthKeyFromParts(y, qIndex * 3);
+}
+
+function monthKeyToQuarterKey(monthKey) {
+  const [y, m] = monthKey.split('-').map(Number);
+  return `${y}-Q${Math.ceil(m / 3)}`;
+}
+
+function quarterIndexToLabel(idx) {
+  const y = Math.floor(idx / 4);
+  const q = (idx % 4) + 1;
+  return `${y}-Q${q}`;
+}
+
+/** 连续4个自然季度内均有缴税即可，不要求同一税种 */
+function evaluateGlobalQuarterly(records, ctx) {
+  const quarterKeys = [];
+  let latestEnd = '';
+
+  for (const r of records) {
+    const range = parsePeriodRange(r.period);
+    if (!range) continue;
+    for (const mk of expandPeriodToMonthKeys(range)) {
+      quarterKeys.push(monthKeyToQuarterKey(mk));
+    }
+    const ek = monthKeyFromDate(range.end);
+    if (ek > latestEnd) latestEnd = ek;
+  }
+
+  if (quarterKeys.length === 0) {
+    return { ok: false, reason: '无有效税款所属期' };
+  }
+
+  const consec = findFourConsecutiveQuarters(quarterKeys);
+  if (!consec.ok) {
+    return {
+      ok: false,
+      reason: '未形成连续4个自然季度均有缴税记录（不分税种）',
+    };
+  }
+
+  const minQ = getMinAcceptableQuarterEndKey(ctx.refDate);
+  if (latestEnd < minQ) {
+    return {
+      ok: false,
+      reason: `最晚所属期结束月 ${formatMonthLabel(latestEnd)} 早于 ${formatMonthLabel(minQ)}（须不早于上一完整季度末）`,
+    };
+  }
+
+  const qStart = quarterIndexToLabel(consec.start);
+  const qEnd = quarterIndexToLabel(consec.end);
+
+  return {
+    ok: true,
+    reason: `连续4个季度均有缴税（${qStart}～${qEnd}，不分税种），最晚所属期至 ${formatMonthLabel(latestEnd)}`,
+    latestEnd,
+    qStart,
+    qEnd,
+  };
+}
+
+function findQuarterlyPass(records, ctx) {
+  const result = evaluateGlobalQuarterly(records, ctx);
+  return result.ok ? result : null;
+}
+
+function getGlobalMonthCoverage(records) {
+  const months = new Set();
+  for (const r of records) {
+    const range = parsePeriodRange(r.period);
+    if (range) {
+      for (const k of expandPeriodToMonthKeys(range)) {
+        months.add(k);
+      }
+    }
+  }
+  return months;
+}
+
+function evaluateGlobalMonthly(records, anchorEnd) {
+  const window = build12MonthWindow(anchorEnd);
+  const covered = getGlobalMonthCoverage(records);
+  const missing = window.filter((k) => !covered.has(k));
+  if (missing.length) {
+    return {
+      ok: false,
+      reason: `滚动12个月中以下月份无任何缴税记录：${missing.map(formatMonthLabel).join('、')}`,
+      window,
+      missing,
+    };
+  }
+  return {
+    ok: true,
+    reason: `滚动12个月内均有缴税（不分税种，${formatMonthLabel(window[0])}～${formatMonthLabel(window[11])}）`,
+    window,
+  };
+}
+
+function evaluateEligibility(records, refDate) {
+  const ctx = getSubmitContext(refDate);
+  const issues = [];
+  const passes = [];
+  const latestEnd = getLatestEndMonthKey(records);
+
+  if (!latestEnd) {
+    return {
+      verdict: 'fail',
+      title: '初步判断：不符合',
+      summary: '无法解析税款所属时期，无法判断连续性。',
+      items: [],
+      ctx,
+    };
+  }
+
+  const anchorOk = latestEnd === ctx.n1Key || latestEnd === ctx.n2Key;
+  let continuityOk = false;
+  let passMode = '';
+
+  const quarterlyPass = findQuarterlyPass(records, ctx);
+  if (quarterlyPass) {
+    continuityOk = true;
+    passMode = 'quarterly';
+    passes.push(
+      `${quarterlyPass.reason}（连续4季度特例，可直接认定连续缴纳）`
+    );
+    if (!anchorOk) {
+      passes.push(
+        `连续4季度路径下最晚所属期至 ${formatMonthLabel(quarterlyPass.latestEnd)}，不要求达到按月缴纳的 ${ctx.n1Label}/${ctx.n2Label} 标准。`
+      );
+    }
+  }
+
+  if (!continuityOk) {
+    if (latestEnd !== ctx.n1Key && latestEnd !== ctx.n2Key) {
+      issues.push(
+        `最晚税款所属期结束月为 ${formatMonthLabel(latestEnd)}，超出按月路径可接受范围（仅接受 ${ctx.n1Label} 或 ${ctx.n2Label}）。` +
+          `例如：不可接受以 ${formatMonthLabel(shiftMonthKey(ctx.n1Key, -2))} 为结束的滚动12个月。`
+      );
+    } else {
+      passes.push(
+        `最晚所属期结束月 ${formatMonthLabel(latestEnd)} 在可接受范围内（N-1 / N-2）。`
+      );
+    }
+  } else if (anchorOk) {
+    passes.push(
+      `全表最晚所属期结束月 ${formatMonthLabel(latestEnd)} 在 N-1 / N-2 范围内。`
+    );
+  }
+
+  if (!continuityOk && anchorOk) {
+    const monthly = evaluateGlobalMonthly(records, latestEnd);
+    if (monthly.ok) {
+      passes.push(monthly.reason);
+      continuityOk = true;
+      passMode = 'monthly';
+    } else {
+      issues.push(monthly.reason);
+      issues.push(
+        '未满足「连续12个月内有缴税（不分税种）」亦未满足「连续4个季度有缴税」特例'
+      );
+    }
+  }
+
+  let verdict = 'fail';
+  let title = '初步判断：不符合';
+  if (continuityOk) {
+    verdict = 'pass';
+    title = '初步判断：符合';
+  } else if (passes.length > 0) {
+    verdict = 'warn';
+    title = '初步判断：存疑';
+  }
+
+  const summaryPass =
+    passMode === 'quarterly'
+      ? '已识别连续4个自然季度均有缴税（不分税种），初步满足连续缴纳要求。'
+      : '滚动12个月内均有缴税记录（不分税种），初步满足连续缴纳要求。';
+
+  return {
+    verdict,
+    title,
+    summary:
+      verdict === 'pass'
+        ? `基于当前完税证明，${summaryPass}`
+        : '基于当前完税证明，未能满足连续12个月缴税或按季特例等要求。本工具不验章，请以政务平台为准。',
+    passes,
+    issues,
+    ctx,
+    latestEnd,
+    passMode,
+    window:
+      passMode === 'monthly' && anchorOk
+        ? build12MonthWindow(latestEnd)
+        : passMode === 'quarterly' && quarterlyPass
+          ? build12MonthWindow(quarterlyPass.latestEnd)
+          : anchorOk
+            ? build12MonthWindow(latestEnd)
+            : [],
+  };
+}
+
+function renderJudgment(result) {
+  if (!judgmentSection) return;
+  judgmentSection.style.display = 'block';
+  judgmentSection.className = 'judgment-section ' + result.verdict;
+
+  judgmentTitle.textContent = result.title;
+  let html = `<p>${escapeHtml(result.summary)}</p>`;
+  if (result.passes.length) {
+    html += '<p><strong>通过项：</strong></p><ul>';
+    for (const p of result.passes) html += `<li>${escapeHtml(p)}</li>`;
+    html += '</ul>';
+  }
+  if (result.issues.length) {
+    html += '<p><strong>问题项：</strong></p><ul>';
+    for (const p of result.issues) html += `<li>${escapeHtml(p)}</li>`;
+    html += '</ul>';
+  }
+  judgmentDetail.innerHTML = html;
+
+  const win =
+    result.window && result.window.length
+      ? `${formatMonthLabel(result.window[0])}～${formatMonthLabel(result.window[11])}`
+      : '—';
+  judgmentMeta.textContent =
+    `提交日基准：${result.ctx.refLabel}；` +
+    `可接受最晚所属期结束月：${result.ctx.n1Label} 或 ${result.ctx.n2Label}；` +
+    `本工具识别最晚结束月：${result.latestEnd ? formatMonthLabel(result.latestEnd) : '—'}；` +
+    `滚动12个月窗口：${win}（该窗口内每月至少有一条缴税即可，不分税种）。` +
+    `不验电子签章。仅供参考，以政务平台核验为准。`;
+}
+</script>
+</body>
+</html>
