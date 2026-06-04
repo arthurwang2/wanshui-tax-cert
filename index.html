@@ -139,31 +139,26 @@
   }
   .result-box { margin-top:32px; background:#fff; border-radius:16px; box-shadow:0 4px 6px -1px rgb(0 0 0 / 0.05); padding:28px; display:none; }
   .taxpayer-card { display:grid; grid-template-columns:repeat(auto-fit, minmax(200px, 1fr)); gap:16px; padding:18px 20px; background:#f0f9ff; border-radius:12px; border:1px solid #bae6fd; margin-bottom:24px; }
-  .taxpayer-item label { display:block; font-size:12px; color:#64748b; margin-bottom:4px; }
-  .taxpayer-item span { font-size:15px; font-weight:600; color:#0f172a; word-break:break-all; }
+  .taxpayer-field-label { display:block; font-size:12px; color:#64748b; margin-bottom:4px; font-weight:400; }
+  .taxpayer-item .taxpayer-value { display:block; font-size:15px; font-weight:600; color:#0f172a; word-break:break-all; }
   table { width:100%; border-collapse:collapse; font-size:15px; }
   th, td { padding:14px 12px; text-align:left; border-bottom:1px solid #e2e8f0; }
   th { background:#f8fafc; font-weight:600; color:#475569; }
   .amount { text-align:right; font-family:ui-monospace,monospace; font-weight:600; }
+  tr.tr-warn-remark { background: #fffbeb; box-shadow: inset 3px 0 0 #f59e0b; }
+  tr.tr-warn-remark td { color: #78350f; }
+  td.month-cell {
+    vertical-align: top;
+    background: #f1f5f9;
+    font-weight: 700;
+    border-right: 1px solid #e2e8f0;
+  }
+  td.month-cell.has-warn { background: #fffbeb; }
   .period { white-space:nowrap; font-weight:600; }
   .removed-section { margin-top:24px; padding:18px; background:#fef2f2; border-radius:12px; border:1px solid #fecaca; }
   .removed-title { color:#991b1b; font-weight:700; margin-bottom:12px; }
   .removed-chip { display:inline-block; background:#fee2e2; color:#7f1d1d; padding:4px 10px; border-radius:6px; margin:4px 6px 4px 0; font-size:13px; }
   .error-box { margin-top:16px; padding:14px 18px; background:#fff7ed; border:1px solid #fed7aa; border-radius:10px; color:#9a3412; font-size:14px; display:none; }
-  .completeness-card {
-    margin-bottom: 20px;
-    padding: 16px 18px;
-    border-radius: 12px;
-    border: 1px solid #e2e8f0;
-    background: #fafafa;
-    display: none;
-  }
-  .completeness-card.ok { border-color: #86efac; background: #f0fdf4; }
-  .completeness-card.bad { border-color: #fecaca; background: #fef2f2; }
-  .completeness-card.warn { border-color: #fde68a; background: #fffbeb; }
-  .completeness-card h3 { font-size: 15px; font-weight: 700; margin-bottom: 8px; color: #334155; }
-  .completeness-card p, .completeness-card li { font-size: 13px; line-height: 1.6; color: #475569; }
-  .completeness-card ul { margin: 6px 0 0 18px; }
   .empty-hint { text-align:center; padding:24px; color:#94a3b8; }
   .disclaimer-gate {
     max-width: 720px;
@@ -215,7 +210,118 @@
   .judgment-detail ul { margin: 8px 0 0 18px; }
   .judgment-detail li { margin: 4px 0; }
   .judgment-meta { font-size: 12px; color: #64748b; margin-top: 10px; }
+  .judgment-kpi-wrap {
+    margin: 14px 0 16px;
+    padding: 14px 16px;
+    border-radius: 12px;
+    background: linear-gradient(135deg, #fffbeb 0%, #fef3c7 100%);
+    border: 2px solid #f59e0b;
+    box-shadow: 0 2px 10px rgba(245, 158, 11, 0.18);
+  }
+  .judgment-section.pass .judgment-kpi-wrap {
+    background: linear-gradient(135deg, #ecfdf5 0%, #d1fae5 100%);
+    border-color: #22c55e;
+    box-shadow: 0 2px 10px rgba(34, 197, 94, 0.15);
+  }
+  .judgment-section.fail .judgment-kpi-wrap {
+    background: linear-gradient(135deg, #fef2f2 0%, #fee2e2 100%);
+    border-color: #f87171;
+    box-shadow: 0 2px 10px rgba(248, 113, 113, 0.12);
+  }
+  .judgment-kpi-inner {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 10px 16px;
+  }
+  .judgment-kpi-label {
+    font-size: 14px;
+    font-weight: 800;
+    color: #78350f;
+    letter-spacing: 0.02em;
+  }
+  .judgment-section.pass .judgment-kpi-label { color: #14532d; }
+  .judgment-section.fail .judgment-kpi-label { color: #991b1b; }
+  .judgment-kpi-value {
+    font-variant-numeric: tabular-nums;
+    line-height: 1;
+  }
+  .judgment-kpi-num {
+    font-size: 42px;
+    font-weight: 800;
+    color: #b45309;
+    letter-spacing: -0.03em;
+  }
+  .judgment-section.pass .judgment-kpi-num { color: #15803d; }
+  .judgment-section.fail .judgment-kpi-num { color: #b91c1c; }
+  .judgment-kpi-denom {
+    font-size: 22px;
+    font-weight: 700;
+    color: #92400e;
+    margin-left: 2px;
+  }
+  .judgment-section.pass .judgment-kpi-denom { color: #166534; }
+  .judgment-section.fail .judgment-kpi-denom { color: #991b1b; }
+  .judgment-kpi-note {
+    margin: 10px 0 0;
+    font-size: 12px;
+    line-height: 1.55;
+    color: #78350f;
+  }
+  .judgment-section.pass .judgment-kpi-note { color: #166534; }
+  .judgment-section.fail .judgment-kpi-note { color: #7f1d1d; }
   #mainApp { display: none; }
+  .mode-panel {
+    max-width: 600px;
+    margin: 0 auto 24px;
+    background: #fff;
+    border: 1px solid #e2e8f0;
+    border-radius: 14px;
+    padding: 16px 18px;
+    font-size: 14px;
+    color: #334155;
+  }
+  .mode-panel h3 { font-size: 15px; margin-bottom: 10px; color: #0f172a; }
+  .mode-options { display: flex; flex-direction: column; gap: 10px; }
+  .mode-options label { display: flex; align-items: flex-start; gap: 8px; cursor: pointer; line-height: 1.5; }
+  .mode-options input { margin-top: 3px; flex-shrink: 0; }
+  .mode-hint { font-size: 12px; color: #64748b; margin-top: 10px; line-height: 1.55; }
+  .pdf-password-panel {
+    max-width: 600px;
+    margin: 16px auto 0;
+    padding: 14px 16px;
+    background: #fffbeb;
+    border: 1px solid #fde68a;
+    border-radius: 12px;
+    font-size: 14px;
+    color: #78350f;
+  }
+  .pdf-password-panel label { display: block; font-weight: 600; margin-bottom: 6px; }
+  .pdf-password-panel input[type="password"] {
+    width: 100%;
+    max-width: 360px;
+    padding: 10px 12px;
+    border: 1px solid #fcd34d;
+    border-radius: 8px;
+    font-size: 15px;
+    font-family: inherit;
+  }
+  .pdf-password-hint { font-size: 12px; color: #92400e; margin-top: 8px; line-height: 1.55; }
+  .completeness-card {
+    margin-bottom: 20px;
+    padding: 16px 18px;
+    border-radius: 12px;
+    border: 1px solid #e2e8f0;
+    background: #fafafa;
+    display: none;
+  }
+  .completeness-card.ok { border-color: #86efac; background: #f0fdf4; }
+  .completeness-card.bad { border-color: #fecaca; background: #fef2f2; }
+  .completeness-card.warn { border-color: #fde68a; background: #fffbeb; }
+  .completeness-card h3 { font-size: 15px; font-weight: 700; margin-bottom: 8px; color: #334155; }
+  .completeness-card p, .completeness-card li { font-size: 13px; line-height: 1.6; color: #475569; }
+  .completeness-card ul { margin: 6px 0 0 18px; }
   .privacy-bar {
     display: flex;
     align-items: center;
@@ -245,9 +351,10 @@
       <p>PDF 识别存在极小概率差错，连续缴纳、所属时期等判断亦可能因版式差异产生偏差，结果仅供参考。</p>
       <p><strong>本工具不对税务机关电子签章进行验真</strong>，无法判断文件来源是否官方、签章是否有效、PDF 是否在签章后被改动；上述事项须自行通过 Adobe 等阅读器或政务平台核验。</p>
       <p>单位用户购车资格以「一网通办」等平台及税务、人社部门最终核验为准；因使用本工具产生的任何后果，由用户本人自行承担。</p>
-      <p>勾选并进入后可使用「购车资格初步判断」；选择跳过则仅提供完税证明整理功能，不进行资格判断。</p>
+      <p>进入主界面后请选择<strong>单位/公司税单</strong>或<strong>个人所得税（上海）</strong>审核模式；两种模式的「初步判断」规则不同，选错模式会导致结论偏差。</p>
+      <p>勾选并进入后可使用「资格初步判断」；选择跳过则仅提供完税证明整理功能，不进行资格判断。</p>
     </div>
-    <label class="disclaimer-check">
+    <label class="disclaimer-check" for="disclaimerAgree">
       <input type="checkbox" id="disclaimerAgree">
       <span>我已阅读并同意上述免责声明</span>
     </label>
@@ -261,10 +368,27 @@
   <div id="mainApp">
   <h1>完税证明智能整理</h1>
   <div class="subtitle">拖入或添加多个 PDF / ZIP，确认齐全后一次整理</div>
+
   <label class="privacy-bar" id="privacyBar">
     <input type="checkbox" id="privacyMask" checked>
     <span>隐私模式：模糊显示纳税人名称、识别号、证明编号及文件名中的敏感信息（取消勾选可查看原文）</span>
   </label>
+
+  <div class="mode-panel" id="modePanel">
+    <h3>审核模式（影响「资格初步判断」）</h3>
+    <div class="mode-options">
+      <label for="modeCompany">
+        <input type="radio" name="auditMode" id="modeCompany" value="company" checked>
+        <span><strong>单位 / 公司税单</strong>：按原购车社保连续缴纳规则（滚动 12 个月或同税种按季特例等）。</span>
+      </label>
+      <label for="modePersonal">
+        <input type="radio" name="auditMode" id="modePersonal" value="personal">
+        <span><strong>个人所得税（上海）</strong>：以<strong>个人所得税</strong>为主；须能识别为上海税务机关出具；在<strong>最晚所属期结束月符合 N-1 / N-2</strong>的前提下，自该月起<strong>倒推连续 48 个自然月</strong>内，须有<strong>不少于 36 个月</strong>在沪个税有效申报月（<strong>零申报计入</strong>；<strong>补缴、负数</strong>不计入）。</span>
+      </label>
+    </div>
+    <p class="mode-hint">整理结果表：<strong>公司与个人模式</strong>均按「税款所属期」同一自然月<strong>合并首列</strong>（rowspan），其下<strong>每条明细仍各占一行</strong>便于核对。个人模式：「备注」中含补缴或滞纳金的行<strong>不剔除</strong>，<strong>高亮</strong>且<strong>不计入</strong>缴费月份统计。切换模式后若已有整理结果，将自动用当前模式重新计算判断。</p>
+    <p class="mode-hint">选择<strong>个人所得税（上海）</strong>时：每次仅支持 <strong>1 个 PDF</strong>（勿多文件、勿 ZIP 内含多份 PDF）；须填写「PDF 打开密码」；同一 PDF 内<strong>证明编号须一致</strong>。<strong>单位 / 公司税单</strong>模式不显示密码栏、亦不使用密码解密。</p>
+  </div>
 
   <div class="upload-area" id="dropZone">
     <div class="upload-icon">📄</div>
@@ -272,6 +396,12 @@
     <div class="upload-hint">支持一次拖入多个 PDF，也可多次添加后再点「开始整理」</div>
     <button type="button" class="pick-link" id="btnPickFiles">或点击选择文件（可多选）</button>
     <input type="file" id="fileInput" accept=".zip,.pdf,application/zip,application/pdf" multiple>
+  </div>
+
+  <div class="pdf-password-panel" id="pdfPasswordPanel" style="display:none;">
+    <label for="pdfPassword">PDF 打开密码（必填）</label>
+    <input type="password" id="pdfPassword" autocomplete="off" placeholder="与在 PDF 阅读器中打开纳税记录时输入的密码一致">
+    <p class="pdf-password-hint">仅在<strong>个人所得税（上海）</strong>模式下使用；该模式每次仅 1 个 PDF。密码仅在当前浏览器本地用于 pdf.js 解密，不会上传服务器。</p>
   </div>
 
   <div class="queue-panel" id="queuePanel">
@@ -297,22 +427,29 @@
 
     <div class="judgment-section" id="judgmentSection" style="display:none;">
       <div class="judgment-title" id="judgmentTitle">—</div>
+      <div class="judgment-kpi-wrap" id="judgmentKpiWrap" hidden>
+        <div class="judgment-kpi-inner">
+          <span class="judgment-kpi-label" id="judgmentKpiLabel">窗口内有效月份数</span>
+          <span class="judgment-kpi-value"><span class="judgment-kpi-num" id="judgmentKpiNum">—</span><span class="judgment-kpi-denom" id="judgmentKpiDenom"></span></span>
+        </div>
+        <p class="judgment-kpi-note" id="judgmentKpiNote"></p>
+      </div>
       <div class="judgment-detail" id="judgmentDetail"></div>
       <div class="judgment-meta" id="judgmentMeta"></div>
     </div>
 
     <div class="taxpayer-card" id="taxpayerCard">
       <div class="taxpayer-item">
-        <label>纳税人名称</label>
-        <span id="taxpayerName">—</span>
+        <span class="taxpayer-field-label" id="lblTaxpayerName">纳税人名称</span>
+        <span id="taxpayerName" class="taxpayer-value" aria-labelledby="lblTaxpayerName">—</span>
       </div>
       <div class="taxpayer-item">
-        <label>纳税人识别号</label>
-        <span id="taxpayerId">—</span>
+        <span class="taxpayer-field-label" id="lblTaxpayerId">纳税人识别号</span>
+        <span id="taxpayerId" class="taxpayer-value" aria-labelledby="lblTaxpayerId">—</span>
       </div>
       <div class="taxpayer-item">
-        <label>来源文件</label>
-        <span id="sourceFiles">—</span>
+        <span class="taxpayer-field-label" id="lblSourceFiles">来源文件</span>
+        <span id="sourceFiles" class="taxpayer-value" aria-labelledby="lblSourceFiles">—</span>
       </div>
     </div>
 
@@ -335,7 +472,7 @@
     </table>
 
     <div class="removed-section" id="removedSection" style="display:none;">
-      <div class="removed-title">已剔除（负数 / 滞纳金 / 罚没收入 / 所属期超3个月等）</div>
+      <div class="removed-title">已剔除（负数 / 滞纳金 / 罚没收入等）</div>
       <div id="removedList"></div>
     </div>
   </div>
@@ -346,12 +483,17 @@
 const PDFJS_WORKER =
   'https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.worker.min.js';
 
+function __dbgTaxpayer(_hypothesisId, _message, _data) {
+  /* 可选：本地调试时自行接入 ingest */
+}
+
 let dropZone, fileInput, resultBox, resultBody, removedSection, removedList;
 let summary, taxpayerNameEl, taxpayerIdEl, sourceFilesEl, errorBox;
 let libErrorEl, processingHintEl, queuePanel, queueList, queueCountEl;
 let btnProcess, btnClearQueue, btnPickFiles, btnAddMore;
 let judgmentSection, judgmentTitle, judgmentDetail, judgmentMeta;
 let completenessSection, completenessBody;
+let pdfPasswordEl;
 /** @type {File[]} */
 let pendingFiles = [];
 let judgmentEnabled = false;
@@ -362,6 +504,10 @@ let lastTaxpayerChecks = [];
 let lastCertNos = [];
 let lastCompletenessResult = null;
 let lastErrorRaw = '';
+/** @type {'company'|'personal'} */
+let auditMode = 'company';
+/** 上次整理结果，用于切换模式时重算判断 */
+let judgmentSnapshot = null;
 const MAX_PDFS = 50;
 
 const PERIOD_RE =
@@ -385,6 +531,12 @@ function ensurePdfJs() {
   }
   if (!pdfjsLib.GlobalWorkerOptions.workerSrc) {
     pdfjsLib.GlobalWorkerOptions.workerSrc = PDFJS_WORKER;
+  }
+  /** file:// 下部分浏览器对跨源 Worker 极严；若 pdf.js 暴露了 PDFWorkerUtil，则强制主线程 fake worker，避免 new Worker 触发安全错误 */
+  if (location.protocol === 'file:' && pdfjsLib.PDFWorkerUtil && typeof pdfjsLib.PDFWorkerUtil === 'object') {
+    try {
+      pdfjsLib.PDFWorkerUtil.isWorkerDisabled = true;
+    } catch (_) {}
   }
 }
 
@@ -463,6 +615,7 @@ function initApp() {
   judgmentTitle = document.getElementById('judgmentTitle');
   judgmentDetail = document.getElementById('judgmentDetail');
   judgmentMeta = document.getElementById('judgmentMeta');
+  pdfPasswordEl = document.getElementById('pdfPassword');
   completenessSection = document.getElementById('completenessSection');
   completenessBody = document.getElementById('completenessBody');
   privacyMaskEl = document.getElementById('privacyMask');
@@ -474,6 +627,11 @@ function initApp() {
     });
   }
   if (resultBox) resultBox.classList.toggle('privacy-on', privacyMaskEnabled);
+
+  document.querySelectorAll('input[name="auditMode"]').forEach((el) => {
+    el.addEventListener('change', onAuditModeChange);
+  });
+  refreshAuditModeFromDom();
 
   btnPickFiles.addEventListener('click', (e) => {
     e.stopPropagation();
@@ -514,6 +672,35 @@ function initApp() {
 }
 
 window.addEventListener('load', initApp);
+
+function syncPdfPasswordPanelVisibility() {
+  if (!pdfPasswordEl) return;
+  const panel = document.getElementById('pdfPasswordPanel');
+  const personal = auditMode === 'personal';
+  if (panel) panel.style.display = personal ? 'block' : 'none';
+  pdfPasswordEl.required = personal;
+  pdfPasswordEl.setAttribute('aria-required', personal ? 'true' : 'false');
+}
+
+function refreshAuditModeFromDom() {
+  const picked = document.querySelector('input[name="auditMode"]:checked');
+  auditMode = picked ? picked.value : 'company';
+  syncPdfPasswordPanelVisibility();
+}
+
+function onAuditModeChange() {
+  refreshAuditModeFromDom();
+  if (!judgmentEnabled || !judgmentSnapshot) return;
+  const jr =
+    auditMode === 'personal'
+      ? evaluatePersonalEligibility(
+          judgmentSnapshot.validRecords,
+          judgmentSnapshot.refDate,
+          judgmentSnapshot.mergedFullText
+        )
+      : evaluateEligibility(judgmentSnapshot.validRecords, judgmentSnapshot.refDate);
+  renderJudgment(jr);
+}
 
 function isAcceptedFile(file) {
   const n = file.name.toLowerCase();
@@ -604,6 +791,19 @@ async function collectPdfsFromFiles(files) {
 async function processAllPending() {
   if (!pendingFiles.length) return;
 
+  refreshAuditModeFromDom();
+  if (auditMode === 'personal' && !getPdfOpenPassword()) {
+    showLibError('个人所得税（上海）模式下须填写「PDF 打开密码」后方可开始整理。');
+    return;
+  }
+  if (auditMode === 'personal' && pendingFiles.length > 1) {
+    showLibError(
+      '个人所得税（上海）模式：待整理列表中仅允许 1 个文件（单个 PDF）。请移除其余文件后再点「开始整理」。'
+    );
+    return;
+  }
+  if (libErrorEl) libErrorEl.style.display = 'none';
+
   const filesToProcess = [...pendingFiles];
   processingHintEl.style.display = 'block';
   btnProcess.disabled = true;
@@ -630,15 +830,8 @@ function clearResults() {
     completenessSection.style.display = 'none';
     completenessSection.className = 'completeness-card';
   }
-  lastTaxpayerRaw = { name: '', id: '' };
-  lastTaxpayerChecks = [];
-  lastCertNos = [];
-  lastCompletenessResult = null;
-  lastErrorRaw = '';
   taxpayerNameEl.textContent = '—';
   taxpayerIdEl.textContent = '—';
-  taxpayerNameEl.classList.remove('pii-masked');
-  taxpayerIdEl.classList.remove('pii-masked');
   sourceFilesEl.textContent = '—';
   summary.textContent = '正在解析 PDF…';
 }
@@ -702,12 +895,37 @@ function groupByY(items, tolerance) {
 /** 文书式标准表头：税种 | 税款所属时期 | 入（退）库日期 | 实缴（退）金额 */
 const WENSHU_TABLE_END = /金额合计|本凭证不作|填表人|备注\s*$/;
 
-async function pdfToLines(arrayBuffer) {
+function getPdfOpenPassword() {
+  if (!pdfPasswordEl) return '';
+  return String(pdfPasswordEl.value || '').trim();
+}
+
+/** 仅个人所得税模式使用用户填写的密码；单位/公司模式一律不传密码。 */
+function getPdfOpenPasswordForCurrentMode() {
+  if (auditMode !== 'personal') return '';
+  return getPdfOpenPassword();
+}
+
+/** pdf.js 3.x：加密/密码错误时通常为 PasswordException */
+function isPdfPasswordError(err) {
+  if (!err) return false;
+  if (err.name === 'PasswordException') return true;
+  const msg = String(err.message || err);
+  return /password|Password|密码|No password given|Incorrect Password|needPassword|wrongPassword/i.test(
+    msg
+  );
+}
+
+async function pdfToLines(arrayBuffer, password) {
   ensurePdfJs();
-  const pdf = await pdfjsLib.getDocument({ data: arrayBuffer.slice(0) }).promise;
+  const pwd = password != null ? password : getPdfOpenPasswordForCurrentMode();
+  const docInit = { data: arrayBuffer.slice(0) };
+  if (pwd) docInit.password = pwd;
+  const pdf = await pdfjsLib.getDocument(docInit).promise;
   const lines = [];
   const pageRows = [];
   const pagesText = [];
+  let readingOrderPage1 = '';
 
   for (let p = 1; p <= pdf.numPages; p++) {
     const page = await pdf.getPage(p);
@@ -719,6 +937,14 @@ async function pdfToLines(arrayBuffer) {
         x: it.transform[4],
         y: it.transform[5],
       }));
+    if (p === 1 && items.length) {
+      const sorted = [...items].sort((a, b) => {
+        const dy = Math.abs(a.y - b.y);
+        if (dy > 4) return b.y - a.y;
+        return a.x - b.x;
+      });
+      readingOrderPage1 = sorted.map((i) => i.str).join(' ').replace(/\s+/g, ' ').trim();
+    }
     const rowGroups = groupByY(items, 5);
     const rows = [];
     const pageLines = [];
@@ -735,7 +961,7 @@ async function pdfToLines(arrayBuffer) {
     pageRows.push({ page: p, rows });
     pagesText.push(pageLines.join('\n'));
   }
-  return { lines, pageRows, numPages: pdf.numPages, pagesText };
+  return { lines, pageRows, readingOrderPage1, numPages: pdf.numPages, pagesText };
 }
 
 function extractCertNumber(text) {
@@ -773,6 +999,43 @@ function extractCertNumberFromSources(pagesText, pageRows) {
   return '';
 }
 
+/**
+ * 个人所得税（上海）：须恰好 1 个 PDF；各页识别到的证明编号须一致（不接受多文件、ZIP 内多 PDF、单文件多编号混装）。
+ */
+async function validatePersonalIncomeTaxUploadConstraints(pdfList, password) {
+  if (!pdfList || pdfList.length !== 1) {
+    return {
+      ok: false,
+      message: `个人所得税（上海）模式每次仅支持 1 个 PDF。当前解析得到 ${pdfList ? pdfList.length : 0} 个 PDF（多个上传文件或 ZIP 内含多份 PDF 均不符合要求），请只保留一份材料后重试。`,
+    };
+  }
+  try {
+    const { pagesText, pageRows } = await pdfToLines(pdfList[0].data, password);
+    const certs = new Set();
+    for (let i = 0; i < pageRows.length; i++) {
+      const c = extractCertNumberFromSources([pagesText[i] || ''], [pageRows[i]]);
+      if (c) certs.add(c);
+    }
+    if (certs.size === 0) {
+      const g = extractCertNumberFromSources(pagesText, pageRows);
+      if (g) certs.add(g);
+    }
+    if (certs.size > 1) {
+      return {
+        ok: false,
+        message:
+          '个人所得税（上海）模式：同一 PDF 不同页面中识别到多个不同的证明编号，可能存在混装。请确认仅包含一份官方纳税记录后再试。',
+      };
+    }
+    return { ok: true };
+  } catch (e) {
+    return {
+      ok: false,
+      message: `个人所得税（上海）模式：打开或解析 PDF 失败：${e && e.message ? e.message : String(e)}`,
+    };
+  }
+}
+
 function extractPageInfo(text) {
   const raw = String(text || '');
   let m = raw.match(/第\s*(\d+)\s*页\s*[,，\/／]?\s*共\s*(\d+)\s*页/);
@@ -808,7 +1071,6 @@ function inferPageFromFileName(fileName) {
   return { current: parseInt(m[1], 10), total: null };
 }
 
-/** 同批次 xxx-1.pdf … xxx-4.pdf：补全页码/总页数/证明编号 */
 function enhanceCertMetaFromFileNames(metaList) {
   const groups = new Map();
   for (const m of metaList) {
@@ -824,8 +1086,7 @@ function enhanceCertMetaFromFileNames(metaList) {
     if (items.length < 2) continue;
     items.sort((a, b) => a.page - b.page);
     const total = items.length;
-    const sharedCert =
-      items.map((x) => x.meta.certNo).find(Boolean) || '';
+    const sharedCert = items.map((x) => x.meta.certNo).find(Boolean) || '';
     for (const { meta, page } of items) {
       if (!meta.pageCurrent) meta.pageCurrent = page;
       if (!meta.pageTotal) meta.pageTotal = total;
@@ -939,9 +1200,7 @@ function validateCertificateCompleteness(metaList) {
       `检测到同一纳税人 ${completeGroups.length} 份均完整的完税证明（证明编号：${completeGroups.map((g) => g.certNo).join('、')}），已合并整理；请确认是否仅需提交其中一份。`
     );
   } else if (byCert.size > 1 && completeGroups.length < byCert.size) {
-    warnings.push(
-      `检测到 ${byCert.size} 份不同证明编号，其中部分不完整，请核对材料。`
-    );
+    warnings.push(`检测到 ${byCert.size} 份不同证明编号，其中部分不完整，请核对材料。`);
   }
 
   return {
@@ -1025,6 +1284,23 @@ function matchPeriod(text) {
   return null;
 }
 
+/**
+ * 仅用于「个人所得税纳税记录」类版式：税款所属期为单月 YYYY.MM / YYYY-MM。
+ * 不在单位/公司解析路径中调用，避免误识别公司材料中的片段。
+ */
+function matchPeriodPersonalOnly(text) {
+  if (!text) return null;
+  const t = String(text).trim().replace(/\s+/g, '');
+  let m = t.match(/^(\d{4})[.．](\d{1,2})$/);
+  if (!m) m = t.match(/^(\d{4})-(\d{1,2})$/);
+  if (!m) return null;
+  const y = +m[1];
+  const mo = +m[2];
+  if (mo < 1 || mo > 12) return null;
+  const last = String(new Date(y, mo, 0).getDate());
+  return normalizePeriod(String(y), String(mo), '1', String(y), String(mo), last);
+}
+
 function baseTaxType(type) {
   return type.replace(/[\(（]\s*滞纳金\s*[\)）]/g, '').trim();
 }
@@ -1085,6 +1361,7 @@ function stripDatesFromTaxType(raw) {
   if (!raw) return '';
   return raw
     .replace(/\d{4}-\d{2}-\d{2}\s*至\s*\d{4}-\d{2}-\d{2}/g, '')
+    .replace(/\d{4}\s*[.．]\s*\d{1,2}\b/g, '')
     .replace(/\d{4}-\d{2}-\d{2}/g, '')
     .replace(
       /\d{4}\s*年\s*\d{1,2}\s*月\s*\d{1,2}\s*日?\s*至\s*\d{4}\s*年\s*\d{1,2}\s*月\s*\d{1,2}\s*日?/g,
@@ -1147,7 +1424,7 @@ function parseWenshuTable(pageRows) {
       if (!period) continue;
 
       const type = resolveTaxType(line, period, buckets, cellStrs);
-      if (!isValidTaxType(type)) continue;
+      if (!type || type.length < 2 || HEADER_SKIP.test(type)) continue;
 
       const amountSource = buckets.amount.join(' ') || line;
       const amounts = [...amountSource.matchAll(AMOUNT_RE)].map((m) => m[0]);
@@ -1169,8 +1446,775 @@ function parseWenshuTable(pageRows) {
   return records;
 }
 
+/** 入库税务机关是否为上海市税务系统（行级） */
+function isShanghaiTaxOffice(text) {
+  const s = String(text || '').replace(/\s+/g, '');
+  if (!s) return false;
+  return /上海/.test(s) && /税务/.test(s);
+}
+
+const PERSONAL_INCOME_TABLE_END =
+  /开具范围|本记录所体现|查验码|电子印章|税务机关印章|^合计|^总计|个人所得税纳税记录\s*$/;
+
+function findPersonalIncomeHeader(rows) {
+  for (let i = 0; i < rows.length; i++) {
+    const line = rows[i].line;
+    if (
+      /申报日期/.test(line) &&
+      /税款所属/.test(line) &&
+      /所得项目|所得\s*项目/.test(line) &&
+      /实缴|金额/.test(line)
+    ) {
+      return i;
+    }
+  }
+  return -1;
+}
+
+function buildPersonalIncomeAnchors(headerItems) {
+  const anchors = [];
+  const push = (key, re) => {
+    for (const it of headerItems) {
+      if (re.test(it.str)) {
+        anchors.push({ key, x: it.x });
+        return;
+      }
+    }
+  };
+  push('filing', /申报日期/);
+  push('amount', /实缴|实缴（退）|实缴\(退\)/);
+  if (!anchors.find((a) => a.key === 'amount')) push('amount', /金额/);
+  push('payDate', /入.*库/);
+  push('type', /所得项目|所得\s*项目/);
+  push('period', /税款所属/);
+  push('authority', /入库税务机关|主管税务机关/);
+  push('remark', /^备注$|^备\s*注$/);
+  if (!anchors.find((a) => a.key === 'remark')) push('remark', /备注/);
+  anchors.sort((a, b) => a.x - b.x);
+  return anchors;
+}
+
+function assignPersonalIncomeColumn(x, anchors, str) {
+  if (!anchors.length) return 'type';
+  const compact = String(str).replace(/\s/g, '');
+  if (/至|—|–|~/.test(str)) return 'period';
+  if (/^\d{4}[.．]\d{1,2}$/.test(compact) || /^\d{4}-\d{1,2}$/.test(compact)) return 'period';
+  if (/^\d{4}-\d{2}-\d{2}$/.test(compact)) {
+    const periodA = anchors.find((a) => a.key === 'period');
+    const payA = anchors.find((a) => a.key === 'payDate');
+    if (periodA && payA) return x < (periodA.x + payA.x) / 2 ? 'period' : 'payDate';
+    if (periodA) return 'period';
+    if (payA) return 'payDate';
+  }
+  if (/^-?\d{1,3}(?:,\d{3})*\.\d{2}$/.test(compact) || /^-?\d+\.\d{2}$/.test(compact)) return 'amount';
+  for (let i = anchors.length - 1; i >= 0; i--) {
+    if (x >= anchors[i].x - 28) return anchors[i].key;
+  }
+  return anchors[0].key;
+}
+
+/** 所属期仅以「税款所属期」列为准，不使用申报日期等其它列上的日期 */
+function resolvePeriodFromPersonalBuckets(buckets) {
+  const ptext = buckets.period.join(' ').trim().replace(/\s+/g, ' ');
+  if (!ptext) return null;
+  return matchPeriod(ptext) || matchPeriodPersonalOnly(ptext.replace(/\s/g, ''));
+}
+
+/**
+ * 个人所得税纳税记录表（仅个人模式调用）。
+ * 所得项目列保留；「备注」含补缴/滞纳金的行仍输出，标记 excludeFromMonthCount，表格高亮且不计入月份统计。
+ */
+function parsePersonalIncomeTable(pageRows) {
+  const records = [];
+  const seen = new Set();
+
+  for (const { rows } of pageRows) {
+    const hi = findPersonalIncomeHeader(rows);
+    if (hi < 0) continue;
+
+    const anchors = buildPersonalIncomeAnchors(rows[hi].items);
+    if (anchors.length < 2) continue;
+
+    for (let r = hi + 1; r < rows.length; r++) {
+      const { line, items } = rows[r];
+      if (!line) continue;
+      if (PERSONAL_INCOME_TABLE_END.test(line)) break;
+      if (/^第\s*\d+\s*页/.test(line)) continue;
+      if (/申报日期.*税款所属.*所得项目/.test(line)) continue;
+
+      const buckets = {
+        filing: [],
+        amount: [],
+        payDate: [],
+        type: [],
+        period: [],
+        authority: [],
+        remark: [],
+      };
+      const cellStrs = items.map((i) => i.str);
+      for (const it of items) {
+        const col = assignPersonalIncomeColumn(it.x, anchors, it.str);
+        if (buckets[col]) buckets[col].push(it.str);
+        else buckets.type.push(it.str);
+      }
+
+      const period = resolvePeriodFromPersonalBuckets(buckets);
+      if (!period) continue;
+
+      const authRaw = buckets.authority.join(' ').replace(/\s+/g, ' ').trim();
+      if (!isShanghaiTaxOffice(authRaw)) continue;
+
+      let type = cleanTaxType(stripDatesFromTaxType(buckets.type.join(' ')));
+      if (!type || type.length < 2 || type === '所得项目' || /^申报日期/.test(type)) continue;
+
+      if (!/^个人所得税/.test(type)) type = `个人所得税（${type}）`;
+
+      const remarkRaw = buckets.remark.join(' ').replace(/\s+/g, ' ').trim();
+      const excludeFromMonthCount = /补缴|滞纳金/.test(remarkRaw);
+
+      const amountSource = buckets.amount.join(' ').trim();
+      let amounts = [...amountSource.matchAll(AMOUNT_RE)].map((m) => m[0]);
+      if (amounts.length === 0 && /(^|[\s¥￥])0(?:\.00)?\b/.test(amountSource)) {
+        amounts.push('0.00');
+      }
+      if (amounts.length === 0) continue;
+
+      const amount = parseAmount(amounts[amounts.length - 1]);
+      if (Number.isNaN(amount)) continue;
+
+      const key = `${period}|${type}|${amount}|${authRaw}|${excludeFromMonthCount ? 'w' : 'n'}`;
+      if (seen.has(key)) continue;
+      seen.add(key);
+
+      records.push({
+        period,
+        type,
+        amount,
+        authority: authRaw,
+        remarkText: remarkRaw,
+        excludeFromMonthCount,
+      });
+    }
+  }
+  return records;
+}
+
 function pdfFullText(lines) {
   return lines.map((l) => l.line).join('\n');
+}
+
+/** 在 fullText 中定位 id（忽略任意空白），返回 id 在原文中结束位置之后的下标；找不到返回 -1 */
+function indexAfterIdIgnoringWhitespace(fullText, id) {
+  const idNorm = String(id || '').replace(/\s+/g, '');
+  if (idNorm.length < 6) return -1;
+  const compact = [];
+  const endAt = [];
+  for (let i = 0; i < fullText.length; i++) {
+    const ch = fullText[i];
+    if (/\s/.test(ch)) continue;
+    compact.push(ch.toLowerCase());
+    endAt.push(i + 1);
+  }
+  const cs = compact.join('');
+  const idx = cs.indexOf(idNorm.toLowerCase());
+  if (idx < 0) return -1;
+  const endIdx = idx + idNorm.length - 1;
+  if (endIdx >= endAt.length) return -1;
+  return endAt[endIdx];
+}
+
+/** 在 fullText 中定位 id 首字符下标（忽略空白），找不到返回 -1 */
+function indexStartOfIdIgnoringWhitespace(fullText, id) {
+  const idNorm = String(id || '').replace(/\s+/g, '');
+  if (idNorm.length < 6) return -1;
+  const charIdx = [];
+  const compact = [];
+  for (let i = 0; i < fullText.length; i++) {
+    const ch = fullText[i];
+    if (/\s/.test(ch)) continue;
+    compact.push(ch.toLowerCase());
+    charIdx.push(i);
+  }
+  const cs = compact.join('');
+  const idx = cs.indexOf(idNorm.toLowerCase());
+  if (idx < 0) return -1;
+  if (idx >= charIdx.length) return -1;
+  return charIdx[idx];
+}
+
+/**
+ * 「纳税人名称」标签到某次税号起点之间的可解析文本长度（与 extractTaxpayerNameLeftOfId 预处理一致）。
+ */
+function measureNameLeftGapForIdHit(fullText, idStartRaw) {
+  const tag = '纳税人名称';
+  const left = fullText.slice(0, idStartRaw);
+  const li = left.lastIndexOf(tag);
+  if (li < 0) return -1;
+  let chunk = left.slice(li + tag.length);
+  chunk = chunk
+    .replace(/纳税人识别号\s*[:：]?/gi, ' ')
+    .replace(/统一社会信用代码\s*[:：]?/gi, ' ')
+    .replace(/^[\s:：、，,。.]+/, '')
+    .trim();
+  return chunk.replace(/\s+/g, '').length;
+}
+
+/** 全文忽略空白后，税号每一次出现的 { start, after }（与 pickTaxpayerIdAnchor 几何一致） */
+function enumerateTaxpayerIdAnchors(fullText, id) {
+  const idNorm = String(id || '').replace(/\s+/g, '');
+  if (idNorm.length < 6 || !fullText) return [];
+  const charIdx = [];
+  const compact = [];
+  const endAt = [];
+  for (let i = 0; i < fullText.length; i++) {
+    const ch = fullText[i];
+    if (/\s/.test(ch)) continue;
+    compact.push(ch.toLowerCase());
+    charIdx.push(i);
+    endAt.push(i + 1);
+  }
+  const cs = compact.join('');
+  const needle = idNorm.toLowerCase();
+  const out = [];
+  let from = 0;
+  let pos;
+  while ((pos = cs.indexOf(needle, from)) >= 0) {
+    const endIdx = pos + idNorm.length - 1;
+    out.push({
+      start: charIdx[pos],
+      after: endIdx < endAt.length ? endAt[endIdx] : -1,
+    });
+    from = pos + 1;
+  }
+  return out;
+}
+
+/**
+ * 税号出现多次且主锚点 left/tail 都空时：对每个锚点各试 tail/left/bridge，取长名称（阅读顺序拼接下常见）。
+ */
+function tryTaxpayerNameAcrossIdAnchors(fullText, id) {
+  if (!fullText || !id || id.length < 15) return '';
+  const anchors = enumerateTaxpayerIdAnchors(fullText, id);
+  if (anchors.length < 2) return '';
+  let best = '';
+  let bestMeta = null;
+  for (const anc of anchors) {
+    const pairs = [
+      ['tail', extractTaxpayerNameAfterId(fullText, id, anc)],
+      ['left', extractTaxpayerNameLeftOfId(fullText, id, anc)],
+      ['bridge', extractTaxpayerNameBridgeAroundId(fullText, id, anc)],
+    ];
+    for (const [kind, n] of pairs) {
+      if (isGarbageTaxpayerNameChunk(n) || n.length < 2) continue;
+      if (n.length > best.length) {
+        best = n;
+        bestMeta = { kind, start: anc.start };
+      }
+    }
+  }
+  // #region agent log
+  __dbgTaxpayer('H', 'tryTaxpayerNameAcrossIdAnchors', {
+    anchorCount: anchors.length,
+    bestLen: best.length,
+    bestKind: bestMeta && bestMeta.kind,
+    bestStart: bestMeta && bestMeta.start,
+  });
+  // #endregion
+  return best;
+}
+
+/**
+ * 名称与税号在 PDF 文本流中不相邻时：截取「纳税人名称」至明细表「税种」表头之间的宽带，再清洗企业名。
+ * 若过早遇到「税种」等分隔（阅读顺序导致），回退到更宽窗口；并对每一处「纳税人名称」取最长合法名。
+ */
+function extractTaxpayerNameFromHeaderBand(fullText) {
+  if (!fullText) return '';
+  const tag = '纳税人名称';
+  const cutPts = [
+    /\n\s*税\s*种\s*/,
+    /\r\n\s*税\s*种\s*/,
+    /\s*品目名称\s*/,
+    /\s*序号\s*税\s*种\s*/,
+    /\s*税种\s*[^\n]{0,40}?税款所属/,
+    /\s税\s*种\s*[：:\s]*[^\n]*税款所属/,
+  ];
+  let best = '';
+  let bestNameIdx = -1;
+  let bestBandLen = 0;
+  let bestOutLen = 0;
+  let occ = 0;
+  for (let searchFrom = 0; ; ) {
+    const iName = fullText.indexOf(tag, searchFrom);
+    if (iName < 0) break;
+    occ++;
+    const after = fullText.slice(iName + tag.length);
+    const lim = Math.min(after.length, 1200);
+    const window = after.slice(0, lim);
+    let end = window.length;
+    for (const re of cutPts) {
+      const m = re.exec(window);
+      if (m && m.index >= 0 && m.index < end) end = m.index;
+    }
+    let band = window.slice(0, end);
+    let out = extractCleanCompanyNameFromMixedChunk(band);
+    if ((!out || out.length < 2) && end < 400 && window.length > end) {
+      const bandWide = window.slice(0, Math.min(900, window.length));
+      const outWide = extractCleanCompanyNameFromMixedChunk(bandWide);
+      if ((outWide || '').length > (out || '').length) {
+        out = outWide;
+        band = bandWide;
+      }
+    }
+    if ((out || '').length > best.length) {
+      best = out;
+      bestNameIdx = iName;
+      bestBandLen = band.replace(/\s+/g, '').length;
+      bestOutLen = (out || '').length;
+    }
+    searchFrom = iName + tag.length;
+  }
+  // #region agent log
+  __dbgTaxpayer('I', 'extractHeaderBand', {
+    textLen: fullText.length,
+    occ,
+    bandLen: bestBandLen,
+    outLen: bestOutLen,
+    nameIdx: bestNameIdx,
+  });
+  // #endregion
+  return best;
+}
+
+/**
+ * 同一税号在全文可能出现多次（表格/阅读顺序错乱）。在「左侧仍含纳税人名称」的命中里，
+ * 优先选「标签→税号」之间文本最长的一次（常为表头真实税号）；否则退回首次匹配。
+ */
+function pickTaxpayerIdAnchor(fullText, id) {
+  const idNorm = String(id || '').replace(/\s+/g, '');
+  const anchors = enumerateTaxpayerIdAnchors(fullText, id);
+  if (!anchors.length)
+    return { start: -1, after: -1, hitCount: 0, pickedByTag: false, bestLeftGap: -1 };
+  const tag = '纳税人名称';
+  let pick = null;
+  let bestGap = -1;
+  for (const anc of anchors) {
+    if (fullText.slice(0, anc.start).lastIndexOf(tag) < 0) continue;
+    const gap = measureNameLeftGapForIdHit(fullText, anc.start);
+    if (!pick || gap > bestGap || (gap === bestGap && anc.start > pick.start)) {
+      bestGap = gap;
+      pick = anc;
+    }
+  }
+  const pickedByTag = pick != null;
+  if (!pick) pick = anchors[0];
+  const out = {
+    start: pick.start,
+    after: pick.after,
+    hitCount: anchors.length,
+    pickedByTag,
+    bestLeftGap: pickedByTag ? bestGap : -1,
+  };
+  // #region agent log
+  if (idNorm.length >= 15 && anchors.length > 1) {
+    __dbgTaxpayer('G', 'pickTaxpayerIdAnchor', {
+      hitCount: out.hitCount,
+      pickedByTag: out.pickedByTag,
+      bestLeftGap: out.bestLeftGap,
+      idAnchorStart: out.start,
+      after: out.after,
+    });
+  }
+  // #endregion
+  return out;
+}
+
+/**
+ * 机关名与纳税人名常连成一段：取最后一个「税务所」「税务局」「税务分局」之后的子串再匹配公司名。
+ */
+function stripAfterLastTaxOfficeForCompanyChunk(s) {
+  let t = String(s || '');
+  let ix = t.lastIndexOf('税务所');
+  if (ix >= 0) t = t.slice(ix + 3);
+  ix = t.lastIndexOf('税务分局');
+  if (ix >= 0) t = t.slice(ix + 4);
+  ix = t.lastIndexOf('税务局');
+  if (ix >= 0) t = t.slice(ix + 3);
+  return t.replace(
+    /^[\s:：、，,。.（）()\-\u2013\u2014·\d零一二三四五六七八九十百千万亿第所委片路由号LCNNo.\sj]+/gi,
+    '',
+  );
+}
+
+function pickLongestCleanCompanyMatch(str) {
+  const re =
+    /([\u4e00-\u9fff（）()（）·]{3,48}(?:有限责任公司|有限公司|股份有限公司|股份公司|合伙企业|工作室|商行|合作社|公司|厂|中心|院|部|店))/g;
+  let best = '';
+  let m;
+  while ((m = re.exec(str)) !== null) {
+    const cand = m[1];
+    if (/税务|机关|总局|税务所|事务所|填发|证明|凭证|编号|No\./i.test(cand)) continue;
+    if (cand.length > best.length) best = cand;
+  }
+  return best;
+}
+
+/**
+ * 从「纳税人名称」与税号之间的杂乱文本中，只取最像企业名称的一段（去掉机关名、重复表头等）。
+ */
+function extractCleanCompanyNameFromMixedChunk(chunk) {
+  if (!chunk) return '';
+  let s = String(chunk).replace(/\s+/g, '');
+  s = s.replace(/纳税人名称|纳税人识别号|统一社会信用代码/g, '');
+  const work = stripAfterLastTaxOfficeForCompanyChunk(s);
+  let best = pickLongestCleanCompanyMatch(work);
+  if (!best) best = pickLongestCleanCompanyMatch(s);
+  // #region agent log
+  if (s.length > 6) {
+    __dbgTaxpayer('E', 'extractCleanCompany', {
+      sLen: s.length,
+      workLen: work.length,
+      bestLen: (best || '').length,
+      viaStrip: work.length < s.length,
+    });
+  }
+  // #endregion
+  if (best) return normalizeTaxpayerName(best);
+  // 无「公司」等形态命中时，禁止把剔机关后的字母数字残段当作名称（常见为统一社会信用代码尾部 +「司」）
+  return '';
+}
+
+/**
+ * 税号在全文中的起始位置之前截取名称（解决「纳税人名称 → 纳税人识别号 → 税号 → 公司名称」抽取顺序）。
+ */
+function extractTaxpayerNameLeftOfId(fullText, id, anchorOpt) {
+  if (!id || id.length < 6 || !fullText) return '';
+  const anc =
+    anchorOpt && anchorOpt.start != null && anchorOpt.start >= 0
+      ? anchorOpt
+      : pickTaxpayerIdAnchor(fullText, id);
+  let idStart = anc.start;
+  if (idStart < 0) {
+    idStart = fullText.indexOf(id);
+    if (idStart < 0) return '';
+  }
+  const left = fullText.slice(0, idStart);
+  const tag = '纳税人名称';
+  const li = left.lastIndexOf(tag);
+  if (li < 0) return '';
+  let chunk = left.slice(li + tag.length);
+  chunk = chunk
+    .replace(/纳税人识别号\s*[:：]?/gi, ' ')
+    .replace(/统一社会信用代码\s*[:：]?/gi, ' ')
+    .replace(/^[\s:：、，,。.]+/, '')
+    .trim();
+  return extractCleanCompanyNameFromMixedChunk(chunk);
+}
+
+/** 税号紧挨「…有限公」+「司」等被拆在两段时，合并税号前后的汉字片段（收窄条件，避免并入税务机关等） */
+function extractTaxpayerNameBridgeAroundId(fullText, id, anchorOpt) {
+  const anc =
+    anchorOpt && anchorOpt.start != null && anchorOpt.start >= 0 && anchorOpt.after != null && anchorOpt.after >= 0
+      ? anchorOpt
+      : pickTaxpayerIdAnchor(fullText, id);
+  const a = anc.start;
+  const b = anc.after;
+  if (a < 0 || b < 0) return '';
+  const preRaw = fullText.slice(Math.max(0, a - 22), a);
+  const postRaw = fullText.slice(b, b + 40);
+  const pre = preRaw.replace(/[\s\n\r\u00a0]+/g, '');
+  const post = postRaw.replace(/[\s\n\r\u00a0]+/g, '');
+  const preM = pre.match(/([\u4e00-\u9fff]{2,18})$/);
+  const postM = post.match(/^([\u4e00-\u9fff]{1,4})/);
+  if (!preM || !postM) return '';
+  const p = preM[1];
+  const q = postM[1];
+  if (
+    q.length === 1 &&
+    q === '司' &&
+    p.length >= 2 &&
+    /公|份|任|团$/.test(p) &&
+    !/税务|机关|总局|识别|统一/.test(p)
+  ) {
+    return normalizeTaxpayerName(p + q);
+  }
+  return '';
+}
+
+/** 首屏「税种」明细表之前的行，用于表头纳税人信息（避免正文、水印干扰） */
+function collectHeaderRowsFromPageRows(pageRows) {
+  if (!pageRows || !pageRows[0] || !pageRows[0].rows) return [];
+  const rows = pageRows[0].rows;
+  const out = [];
+  for (const row of rows) {
+    const ln = row.line || '';
+    if (/税种/.test(ln) && /税款所属/.test(ln) && /实缴|金额/.test(ln)) break;
+    out.push(row);
+  }
+  return out;
+}
+
+/** 表头区误入名称列的噪声（凭证号、日期、水印英文等） */
+function isLikelyNonNameHeaderChunk(chunk) {
+  const t = String(chunk || '').trim();
+  if (!t) return true;
+  if (/^L4G/i.test(t) || /yaokchen/i.test(t)) return true;
+  if (/^[\d\s-]{8,}$/.test(t)) return true;
+  if (/^\d{4}[-年／/]\d{1,2}[-月／/]\d{1,2}/.test(t)) return true;
+  if (/^(No\.|编号|证明|填发)/i.test(t)) return true;
+  return false;
+}
+
+/** 从下一行起收集名称片段，直到出现「纳税人识别号」列或走完整行 */
+function appendNameContinuationUntilTaxIdRow(headerRows, ri, nameChunks) {
+  for (let rj = ri + 1; rj < headerRows.length; rj++) {
+    const row2 = headerRows[rj];
+    const cells2 =
+      row2.cells && row2.cells.length ? row2.cells : row2.line ? [row2.line] : [];
+    if (!cells2.length) continue;
+    const ii2 = cells2.findIndex((c) => /纳税人识别号|统一社会信用代码/.test(c));
+    if (ii2 >= 0) {
+      for (let k = 0; k < ii2; k++) {
+        const chunk = String(cells2[k] || '').trim();
+        if (/纳税人名称|纳税人识别号|统一社会信用代码/.test(chunk)) continue;
+        const compact = chunk.replace(/\s+/g, '');
+        if (/^[0-9A-Za-z]{15,22}$/.test(compact)) continue;
+        if (
+          chunk &&
+          !/^[:：]+$/.test(chunk) &&
+          !isLikelyNonNameHeaderChunk(chunk)
+        )
+          nameChunks.push(chunk);
+      }
+      break;
+    }
+    for (const c2 of cells2) {
+      const chunk = String(c2 || '').trim();
+      if (/纳税人识别号|统一社会信用代码/.test(chunk)) break;
+      if (/^[0-9A-Za-z]{15,22}$/.test(chunk.replace(/\s+/g, ''))) continue;
+      if (
+        chunk &&
+        !/^[:：税种]+$/.test(chunk) &&
+        !/^税种/.test(chunk) &&
+        !isLikelyNonNameHeaderChunk(chunk)
+      )
+        nameChunks.push(chunk);
+    }
+  }
+}
+
+/**
+ * 用 pdfToLines 生成的横向 cells 解析纳税人名称/识别号（与全文拼接顺序无关）。
+ * 解决：名称与「纳税人识别号」标签换行分列、或税号与名称分列时，全文正则拿不到名称的问题。
+ */
+function parseTaxpayerFromPageRows(pageRows) {
+  let name = '';
+  let id = '';
+  const headerRows = collectHeaderRowsFromPageRows(pageRows);
+  const nameChunks = [];
+
+  const absorbId = (raw) => {
+    const s = String(raw || '').trim();
+    if (!s) return;
+    const m1 = s.match(
+      /(?:纳税人识别号|统一社会信用代码)\s*[:：]?\s*([0-9A-Za-z](?:\s*[0-9A-Za-z]){14,40})/
+    );
+    if (m1) {
+      const c = m1[1].replace(/\s+/g, '');
+      if (c.length >= 15 && c.length <= 22) id = c;
+      return;
+    }
+    const compact = s.replace(/\s+/g, '');
+    if (/^[0-9A-Z]{18}$/.test(compact)) id = compact;
+    else if (/^[0-9A-Za-z]{15,22}$/.test(compact) && /\d/.test(compact) && /[A-Za-z]/.test(compact))
+      id = compact;
+  };
+
+  for (let ri = 0; ri < headerRows.length; ri++) {
+    const row = headerRows[ri];
+    const cells =
+      row.cells && row.cells.length ? row.cells : (row.line ? [row.line] : []);
+    if (!cells.length) continue;
+
+    for (const c of cells) absorbId(c);
+
+    const ni = cells.findIndex((c) => /纳税人名称/.test(c));
+    const ii = cells.findIndex((c) => /纳税人识别号|统一社会信用代码/.test(c));
+
+    if (cells.length === 1) {
+      const cell = cells[0];
+      if (/纳税人名称/.test(cell) && /纳税人识别号/.test(cell)) {
+        const mInline = cell.match(
+          /纳税人名称\s*[:：]?\s*([\s\S]+?)\s*纳税人识别号\s*[:：]?\s*([0-9A-Za-z](?:\s*[0-9A-Za-z]){14,40})/
+        );
+        if (mInline) {
+          const n0 = normalizeTaxpayerName(mInline[1]);
+          if (!isGarbageTaxpayerNameChunk(n0) && n0.length >= 2) {
+            nameChunks.length = 0;
+            nameChunks.push(mInline[1]);
+          }
+          const id0 = mInline[2].replace(/\s+/g, '');
+          if (id0.length >= 15) id = id0;
+        }
+      } else if (/纳税人名称/.test(cell) && !/纳税人识别号/.test(cell)) {
+        const afterLabel = cell.replace(/^[\s\S]*?纳税人名称\s*[:：]?\s*/, '').trim();
+        if (afterLabel && !isLikelyNonNameHeaderChunk(afterLabel)) nameChunks.push(afterLabel);
+        appendNameContinuationUntilTaxIdRow(headerRows, ri, nameChunks);
+      }
+      continue;
+    }
+
+    if (ni >= 0 && ii > ni) {
+      for (let k = ni + 1; k < ii; k++) {
+        const chunk = String(cells[k] || '').trim();
+        if (chunk && !/^[:：－-]+$/.test(chunk) && !isLikelyNonNameHeaderChunk(chunk))
+          nameChunks.push(chunk);
+      }
+    } else if (ni >= 0 && ii < 0) {
+      for (let k = ni + 1; k < cells.length; k++) {
+        const chunk = String(cells[k] || '').trim();
+        if (/纳税人识别号|统一社会信用代码/.test(chunk)) break;
+        const compact = chunk.replace(/\s+/g, '');
+        if (/^[0-9A-Za-z]{15,22}$/.test(compact)) break;
+        if (chunk && !/^[:：]+$/.test(chunk) && !isLikelyNonNameHeaderChunk(chunk))
+          nameChunks.push(chunk);
+      }
+      appendNameContinuationUntilTaxIdRow(headerRows, ri, nameChunks);
+    } else if (ni < 0 && ii > 0) {
+      for (let k = 0; k < ii; k++) {
+        const chunk = String(cells[k] || '').trim();
+        if (/纳税人名称/.test(chunk)) continue;
+        if (chunk && !/^[:：]+$/.test(chunk) && !isLikelyNonNameHeaderChunk(chunk))
+          nameChunks.push(chunk);
+      }
+    }
+  }
+
+  name = normalizeTaxpayerName(nameChunks.join(''));
+
+  const headerText = headerRows.map((r) => r.line).join('\n');
+  if (!id) {
+    const idPat = [
+      /纳税人识别号\s*[:：]?\s*([0-9A-Za-z](?:\s*[0-9A-Za-z]){14,40})/,
+      /统一社会信用代码\s*[:：]?\s*([0-9A-Z](?:\s*[0-9A-Z]){17,40})/,
+    ];
+    for (const re of idPat) {
+      const m = headerText.match(re);
+      if (m) {
+        const c = m[1].replace(/\s+/g, '');
+        if (c.length >= 15 && c.length <= 22) {
+          id = c;
+          break;
+        }
+      }
+    }
+  }
+
+  if (!name || name.length < 2 || isGarbageTaxpayerNameChunk(name)) {
+    const fb = parseTaxpayer(headerText);
+    if (!isGarbageTaxpayerNameChunk(fb.name) && fb.name.length >= 2) name = fb.name;
+    if (!id && fb.id) id = fb.id;
+  }
+
+  // #region agent log
+  __dbgTaxpayer('D', 'parseTaxpayerFromPageRows', {
+    hdrRows: headerRows.length,
+    nameLen: (name || '').length,
+    idLen: (id || '').length,
+  });
+  // #endregion
+
+  return { name, id };
+}
+
+function mergeTaxpayerParse(structured, textBased, fullText) {
+  const pickId = () => {
+    const a = (structured.id || '').replace(/\s+/g, '');
+    const b = (textBased.id || '').replace(/\s+/g, '');
+    if (a.length >= 15 && a.length <= 22) return a;
+    if (b.length >= 15 && b.length <= 22) return b;
+    return a || b;
+  };
+  const pickName = () => {
+    const na = normalizeTaxpayerName(structured.name);
+    const nb = normalizeTaxpayerName(textBased.name);
+    const va = !isGarbageTaxpayerNameChunk(na) && na.length >= 2;
+    const vb = !isGarbageTaxpayerNameChunk(nb) && nb.length >= 2;
+    if (va && vb) return na.length >= nb.length ? na : nb;
+    if (va) return na;
+    if (vb) return nb;
+    return '';
+  };
+  let id = pickId();
+  let name = pickName();
+  const idAnchor =
+    id && fullText && id.length >= 6 ? pickTaxpayerIdAnchor(fullText, id) : null;
+  const idAncOpt = idAnchor && idAnchor.start >= 0 ? idAnchor : undefined;
+  const beforeTailLen = (name || '').length;
+  let tailLen = -1;
+  let tailUsed = false;
+  let leftUsed = false;
+  let bridgeUsed = false;
+  if ((!name || name.length < 2) && id && id.length >= 15 && fullText) {
+    const tail = extractTaxpayerNameAfterId(fullText, id, idAncOpt);
+    tailLen = tail.length;
+    if (!isGarbageTaxpayerNameChunk(tail) && tail.length >= 2) {
+      name = tail;
+      tailUsed = true;
+    }
+  }
+  if ((!name || name.length < 2) && id && id.length >= 15 && fullText) {
+    const leftN = extractTaxpayerNameLeftOfId(fullText, id, idAncOpt);
+    if (!isGarbageTaxpayerNameChunk(leftN) && leftN.length >= 2) {
+      name = leftN;
+      leftUsed = true;
+    }
+  }
+  if ((!name || name.length < 2) && id && id.length >= 15 && fullText) {
+    const br = extractTaxpayerNameBridgeAroundId(fullText, id, idAncOpt);
+    if (!isGarbageTaxpayerNameChunk(br) && br.length >= 2) {
+      name = br;
+      bridgeUsed = true;
+    }
+  }
+  let crossUsed = false;
+  if ((!name || name.length < 2) && id && id.length >= 15 && fullText) {
+    const cross = tryTaxpayerNameAcrossIdAnchors(fullText, id);
+    if (!isGarbageTaxpayerNameChunk(cross) && cross.length >= 2) {
+      name = cross;
+      crossUsed = true;
+    }
+  }
+  let bandUsed = false;
+  if ((!name || name.length < 2) && fullText) {
+    const bn = extractTaxpayerNameFromHeaderBand(fullText);
+    if (!isGarbageTaxpayerNameChunk(bn) && bn.length >= 2) {
+      name = bn;
+      bandUsed = true;
+    }
+  }
+  // #region agent log
+  __dbgTaxpayer('B', 'mergeTaxpayerParse', {
+    sNameLen: (structured.name || '').length,
+    tNameLen: (textBased.name || '').length,
+    beforeTailLen,
+    finalNameLen: (name || '').length,
+    idLen: (id || '').length,
+    tailLen,
+    tailUsed,
+    leftUsed,
+    bridgeUsed,
+    crossUsed,
+    bandUsed,
+    idHitCount: idAnchor ? idAnchor.hitCount : 0,
+    idPickedByTag: idAnchor ? idAnchor.pickedByTag : false,
+    idIdxWs: idAnchor && idAnchor.after >= 0 ? idAnchor.after : -999,
+    idAnchorStart: idAnchor && idAnchor.start >= 0 ? idAnchor.start : -999,
+    idBestLeftGap: idAnchor && idAnchor.bestLeftGap != null ? idAnchor.bestLeftGap : -999,
+    idIdxRaw: id && fullText ? fullText.indexOf(id) : -999,
+    proto: typeof location !== 'undefined' ? location.protocol : '',
+  });
+  // #endregion
+  return { name, id };
 }
 
 function normalizeTaxpayerName(raw) {
@@ -1181,9 +2225,110 @@ function normalizeTaxpayerName(raw) {
     .trim();
 }
 
+/** 疑似统一社会信用代码/税号残段 + 单字「司」等，非中文主体名称 */
+function isTaxpayerNameLikelyCreditCodeFragment(n) {
+  const s = String(n || '').replace(/\s+/g, '');
+  if (s.length < 4) return false;
+  const hanCount = (s.match(/[\u4e00-\u9fff]/g) || []).length;
+  const alnumCount = (s.match(/[A-Za-z0-9]/g) || []).length;
+  if (alnumCount >= 5 && hanCount <= 2) return true;
+  if (/^[A-Za-z0-9]{6,}司?$/.test(s)) return true;
+  if (/[A-Z0-9]{6,}/.test(s) && hanCount <= 2) return true;
+  return false;
+}
+
+/** 正则误把「表头之间的空白」当成名称时剔除（常见于 PDF 文本流里「识别号」列在名称单元格之前） */
+function isGarbageTaxpayerNameChunk(n) {
+  if (!n || n.length < 2) return true;
+  if (n === '纳税人识别号' || n === '统一社会信用代码') return true;
+  if (/^纳税人(识别号|名称)?$/.test(n)) return true;
+  if (isTaxpayerNameLikelyCreditCodeFragment(n)) return true;
+  return false;
+}
+
+/**
+ * 部分电子版完税证明提取顺序为：纳税人名称 → 纳税人识别号（标签）→ 税号 → 换行后的名称（名称在格内换行时更明显）。
+ * 此时「名称…识别号」非贪婪匹配只会吃到空白，需在已识别税号后截取名称。
+ */
+function extractTaxpayerNameAfterId(fullText, id, anchorOpt) {
+  if (!id || id.length < 6) return '';
+  const anc =
+    anchorOpt && anchorOpt.after != null && anchorOpt.after >= 0
+      ? anchorOpt
+      : pickTaxpayerIdAnchor(fullText, id);
+  let end = anc.after;
+  let usedRawIdIndex = false;
+  if (end < 0) {
+    const pos = fullText.indexOf(id);
+    if (pos < 0) {
+      // #region agent log
+      if (id.length >= 15) {
+        __dbgTaxpayer('B', 'extract_id_absent', {
+          idLen: id.length,
+          textLen: (fullText || '').length,
+        });
+      }
+      // #endregion
+      return '';
+    }
+    end = pos + id.length;
+    usedRawIdIndex = true;
+  }
+  let rest = fullText.slice(end, end + 800);
+  rest = rest.split(/\s*税\s*种\s*/)[0];
+  rest = rest.split(/\s*税种\s*/)[0];
+  rest = rest.split(/\s*品目名称\s*/)[0];
+  rest = rest.split(/\s*原凭证号\s*/)[0];
+  rest = rest.replace(/L4G[\w-]*/gi, '').replace(/yaokchen/gi, '');
+  rest = rest.replace(/^[\s\d:：、，,。.年月日时至\-]+/, '');
+  const cleaned = extractCleanCompanyNameFromMixedChunk(rest);
+  const n = normalizeTaxpayerName(rest);
+  let out = cleaned.length >= 2 ? cleaned : n;
+  if (/^(增值税|消费税|企业所得税|印花税|城建税|城市维护建设税|教育费附加|地方教育附加|税种|合计|序号)/.test(out))
+    out = '';
+  // #region agent log
+  if (id.length >= 15 && (!out || out.length < 2)) {
+    __dbgTaxpayer('B', 'extract_tail_empty', {
+      idLen: id.length,
+      usedRawIdIndex,
+      rawNormLen: n.length,
+      blockedByTaxPrefix: n.length > 0 && out === '',
+      textLen: (fullText || '').length,
+    });
+  }
+  // #endregion
+  return out;
+}
+
 function parseTaxpayer(fullText) {
   let name = '';
   let id = '';
+
+  const idPatterns = [
+    /纳税人识别号\s*[:：]?\s*([0-9A-Za-z](?:\s*[0-9A-Za-z]){14,40})/,
+    /纳税人识别号\s*[:：]?\s*([0-9A-Za-z]{15,22})/,
+    /统一社会信用代码\s*[:：]?\s*([0-9A-Z](?:\s*[0-9A-Z]){17,40})/,
+    /统一社会信用代码\s*[:：]?\s*([0-9A-Z]{18})/,
+    /识别号\s*[:：]?\s*([0-9A-Za-z](?:\s*[0-9A-Za-z]){14,40})/,
+    /识别号\s*[:：]?\s*([0-9A-Za-z]{15,22})/,
+    /身份证件号码\s*[:：]?\s*([0-9Xx](?:\s*[0-9Xx]){14,30})/,
+    /身份证件号码\s*[:：]?\s*([0-9Xx]{15,20})/,
+  ];
+  for (const re of idPatterns) {
+    const m = fullText.match(re);
+    if (!m) continue;
+    const cand = m[1].replace(/\s+/g, '').trim();
+    const isIdCard = /身份证件号码/.test(re.source);
+    if (isIdCard) {
+      if (cand.length >= 15 && cand.length <= 20) {
+        id = cand;
+        break;
+      }
+    } else if (cand.length >= 15 && cand.length <= 22) {
+      id = cand;
+      break;
+    }
+  }
 
   // 必须匹配到「纳税人识别号」整段标签，不能用 [^纳税人识别号]（公司名里的「信」等字会误截断）
   const namePatterns = [
@@ -1194,25 +2339,73 @@ function parseTaxpayer(fullText) {
   for (const re of namePatterns) {
     const m = fullText.match(re);
     if (m) {
-      name = normalizeTaxpayerName(m[1]);
-      if (name.length >= 2) break;
+      const n = normalizeTaxpayerName(m[1]);
+      if (!isGarbageTaxpayerNameChunk(n)) {
+        name = n;
+        if (name.length >= 2) break;
+      }
     }
   }
 
-  const idPatterns = [
-    /纳税人识别号\s*[:：]?\s*([0-9A-Za-z]{15,22})/,
-    /统一社会信用代码\s*[:：]?\s*([0-9A-Z]{18})/,
-    /识别号\s*[:：]?\s*([0-9A-Za-z]{15,22})/,
-  ];
-  for (const re of idPatterns) {
-    const m = fullText.match(re);
-    if (m) {
-      id = m[1].trim();
-      break;
+  if (!name || name.length < 2) {
+    const reAll = /纳税人名称\s*[:：]?\s*([\s\S]+?)\s*纳税人识别号/g;
+    for (const m of fullText.matchAll(reAll)) {
+      const n = normalizeTaxpayerName(m[1]);
+      if (isGarbageTaxpayerNameChunk(n)) continue;
+      if (n.length > name.length) name = n;
+    }
+  }
+
+  if (!name || name.length < 2) {
+    const natName = fullText.match(/姓\s*名\s*[:：]?\s*([\s\S]+?)\s*身份证件号码/);
+    if (natName) name = normalizeTaxpayerName(natName[1]);
+  }
+
+  if ((!name || name.length < 2) && id && id.length >= 15) {
+    let idAncOpt;
+    if (fullText && id.length >= 6) {
+      const a = pickTaxpayerIdAnchor(fullText, id);
+      idAncOpt = a.start >= 0 ? a : undefined;
+    }
+    const tailName = extractTaxpayerNameAfterId(fullText, id, idAncOpt);
+    if (!isGarbageTaxpayerNameChunk(tailName) && tailName.length >= 2) name = tailName;
+    if (!name || name.length < 2) {
+      const leftN = extractTaxpayerNameLeftOfId(fullText, id, idAncOpt);
+      if (!isGarbageTaxpayerNameChunk(leftN) && leftN.length >= 2) name = leftN;
+    }
+    if (!name || name.length < 2) {
+      const br = extractTaxpayerNameBridgeAroundId(fullText, id, idAncOpt);
+      if (!isGarbageTaxpayerNameChunk(br) && br.length >= 2) name = br;
+    }
+    if (!name || name.length < 2) {
+      const cross = tryTaxpayerNameAcrossIdAnchors(fullText, id);
+      if (!isGarbageTaxpayerNameChunk(cross) && cross.length >= 2) name = cross;
+    }
+    if (!name || name.length < 2) {
+      const bn = extractTaxpayerNameFromHeaderBand(fullText);
+      if (!isGarbageTaxpayerNameChunk(bn) && bn.length >= 2) name = bn;
     }
   }
 
   return { name, id };
+}
+
+/** 合并两次纯文本 parseTaxpayer（按行拼接 vs 首页阅读顺序），取长名称、有效税号 */
+function mergeTextTaxpayerParses(a, b) {
+  const normId = (s) => String(s || '').replace(/\s+/g, '');
+  const pickId = () => {
+    const ids = [normId(a.id), normId(b.id)];
+    for (const c of ids) if (c.length >= 15 && c.length <= 22) return c;
+    for (const c of ids) if (c.length >= 15) return c;
+    return ids[0] || ids[1] || '';
+  };
+  let best = '';
+  for (const raw of [a.name, b.name]) {
+    const n = normalizeTaxpayerName(raw);
+    if (isGarbageTaxpayerNameChunk(n)) continue;
+    if (n.length > best.length) best = n;
+  }
+  return { name: best, id: pickId() };
 }
 
 function cleanTaxType(raw) {
@@ -1254,7 +2447,12 @@ function extractTaxTypeFromRow(line, periodStr, cells) {
   return '';
 }
 
-function parseRecordsFromLines(lines, pageRows) {
+function parseRecordsFromLines(lines, pageRows, recordMode) {
+  if (recordMode === 'personal') {
+    const personal = parsePersonalIncomeTable(pageRows);
+    if (personal.length > 0) return personal;
+  }
+
   const wenshu = parseWenshuTable(pageRows);
   if (wenshu.length > 0) return wenshu;
 
@@ -1265,7 +2463,10 @@ function parseRecordsFromLines(lines, pageRows) {
     if (!line || HEADER_SKIP.test(line)) continue;
     if (/^第\s*\d+\s*页/.test(line)) continue;
 
-    const period = matchPeriod(line);
+    let period = matchPeriod(line);
+    if (!period && recordMode === 'personal') {
+      period = matchPeriodPersonalOnly(line.replace(/\s+/g, ''));
+    }
     if (!period) continue;
 
     const amounts = [...line.matchAll(AMOUNT_RE)].map((m) => m[0]);
@@ -1275,7 +2476,8 @@ function parseRecordsFromLines(lines, pageRows) {
     if (Number.isNaN(amount)) continue;
 
     let type = stripDatesFromTaxType(extractTaxTypeFromRow(line, period, cells));
-    if (!isValidTaxType(type)) continue;
+    if (!type || type.length < 2) continue;
+    if (/^\d+(\.\d+)?$/.test(type)) continue;
 
     const key = `${period}|${type}|${amount}`;
     if (seen.has(key)) continue;
@@ -1287,20 +2489,29 @@ function parseRecordsFromLines(lines, pageRows) {
   return records;
 }
 
-/** 同期同基础税种：负数、滞纳金、罚没、所属期超3个月 → 整组剔除 */
-function buildBlacklist(records) {
+/**
+ * 文书式：同期同基础税种出现滞纳金行或负数 → 整组剔除（单位模式）。
+ * 个人模式：不因税种列中的「补缴/滞纳金」字样整表剔除；滞纳金/补缴仅通过「备注」列在解析阶段逐条排除。
+ */
+function buildBlacklist(records, mode) {
   const contaminatedBase = new Set();
   const blacklist = new Set();
+  const modeKey = mode || auditMode;
 
   for (const r of records) {
     const exact = r.period + '|' + r.type;
     const base = r.period + '|' + baseTaxType(r.type);
-    if (
-      r.amount < 0 ||
-      /滞纳金/.test(r.type) ||
-      isPenaltyTaxType(r.type) ||
-      isPeriodSpanTooLong(r.period)
-    ) {
+    let bad = false;
+    if (modeKey === 'personal') {
+      bad = r.amount < 0 || isPenaltyTaxType(r.type);
+    } else {
+      bad =
+        r.amount < 0 ||
+        /滞纳金/.test(r.type) ||
+        isPenaltyTaxType(r.type) ||
+        isPeriodSpanTooLong(r.period);
+    }
+    if (bad) {
       contaminatedBase.add(base);
       blacklist.add(exact);
     }
@@ -1326,11 +2537,32 @@ function filterAndSort(records, blacklist) {
     });
 }
 
-async function parsePdfBuffer(arrayBuffer, fileName) {
-  const { lines, pageRows, numPages, pagesText } = await pdfToLines(arrayBuffer);
+async function parsePdfBuffer(arrayBuffer, fileName, password, recordMode) {
+  const { lines, pageRows, readingOrderPage1, numPages, pagesText } = await pdfToLines(
+    arrayBuffer,
+    password
+  );
   const fullText = pdfFullText(lines);
-  const taxpayer = parseTaxpayer(fullText);
-  const records = parseRecordsFromLines(lines, pageRows);
+  const structured = parseTaxpayerFromPageRows(pageRows);
+  const textBased = mergeTextTaxpayerParses(
+    parseTaxpayer(fullText),
+    parseTaxpayer(readingOrderPage1 || '')
+  );
+  const canonicalFull = [fullText, readingOrderPage1].filter(Boolean).join('\n');
+  const taxpayer = mergeTaxpayerParse(structured, textBased, canonicalFull);
+  // #region agent log
+  __dbgTaxpayer('A', 'parsePdfBuffer', {
+    file: fileName || '',
+    structNameLen: (structured.name || '').length,
+    textNameLen: (textBased.name || '').length,
+    finalNameLen: (taxpayer.name || '').length,
+    idLen: (taxpayer.id || '').length,
+    fullTextLen: fullText.length,
+    roLen: (readingOrderPage1 || '').length,
+    proto: typeof location !== 'undefined' ? location.protocol : '',
+  });
+  // #endregion
+  const records = parseRecordsFromLines(lines, pageRows, recordMode || 'company');
   const certMeta = parseCertMetaFromPdf(numPages, pagesText, fileName, pageRows);
   return { fileName, taxpayer, records, fullText, certMeta };
 }
@@ -1354,6 +2586,7 @@ async function extractPdfsFromZip(file) {
 
 async function processFiles(files) {
   clearResults();
+  refreshAuditModeFromDom();
 
   let pdfList = [];
 
@@ -1365,6 +2598,36 @@ async function processFiles(files) {
       resultBody.innerHTML =
         '<tr><td colspan="3" class="empty-hint">压缩包内无 PDF，或未添加有效文件</td></tr>';
       return;
+    }
+
+    if (auditMode === 'personal' && !getPdfOpenPassword()) {
+      errorBox.style.display = 'block';
+      errorBox.textContent =
+        '个人所得税（上海）模式下须填写「PDF 打开密码」后方可解析加密纳税记录。';
+      summary.textContent = '';
+      sourceFilesEl.textContent = '—';
+      resultBody.innerHTML =
+        '<tr><td colspan="3" class="empty-hint">请填写 PDF 打开密码后重新点击「开始整理」</td></tr>';
+      return;
+    }
+
+    if (auditMode === 'personal') {
+      const uploadRule = await validatePersonalIncomeTaxUploadConstraints(
+        pdfList,
+        getPdfOpenPasswordForCurrentMode()
+      );
+      if (!uploadRule.ok) {
+        errorBox.style.display = 'block';
+        errorBox.textContent = uploadRule.message;
+        summary.textContent = '';
+        sourceFilesEl.textContent = '—';
+        resultBody.innerHTML = `<tr><td colspan="3" class="empty-hint">${escapeHtml(
+          uploadRule.message
+        )}</td></tr>`;
+        judgmentSnapshot = null;
+        if (judgmentSection) judgmentSection.style.display = 'none';
+        return;
+      }
     }
 
     if (pdfList.length > MAX_PDFS) {
@@ -1379,16 +2642,31 @@ async function processFiles(files) {
     const allRecords = [];
     let taxpayer = { name: '', id: '' };
     const warnings = [];
+    const mergedFullTextParts = [];
     const certMetaList = [];
     const taxpayerChecks = [];
 
     for (const pdf of pdfList) {
       let parsed;
       try {
-        parsed = await parsePdfBuffer(pdf.data, pdf.name);
+        parsed = await parsePdfBuffer(
+          pdf.data,
+          pdf.name,
+          getPdfOpenPasswordForCurrentMode(),
+          auditMode
+        );
       } catch (err) {
-        warnings.push(`${pdf.name} 解析失败：${err.message}`);
+        const hint = isPdfPasswordError(err)
+          ? auditMode === 'personal'
+            ? '（疑似加密 PDF：请确认「PDF 打开密码」与打开文件时一致后重新整理）'
+            : '（疑似加密 PDF：单位/公司模式下本工具不提供密码解密，请改用个人所得税模式并填写密码，或使用无密码副本）'
+          : '';
+        warnings.push(`${pdf.name} 解析失败：${err.message || err}${hint}`);
         continue;
+      }
+
+      if (parsed.records.length === 0) {
+        warnings.push(`${pdf.name} 未识别到税款明细行`);
       }
 
       if (parsed.certMeta) certMetaList.push(parsed.certMeta);
@@ -1400,10 +2678,10 @@ async function processFiles(files) {
         });
       }
 
-      if (parsed.records.length === 0) {
-        warnings.push(`${pdf.name} 未识别到税款明细行`);
-      }
+      mergedFullTextParts.push(parsed.fullText || '');
 
+      const prevNameLen = (taxpayer.name || '').length;
+      const prevIdLen = (taxpayer.id || '').length;
       if (
         parsed.taxpayer.name &&
         (!taxpayer.name || parsed.taxpayer.name.length > taxpayer.name.length)
@@ -1411,16 +2689,52 @@ async function processFiles(files) {
         taxpayer.name = parsed.taxpayer.name;
       }
       if (!taxpayer.id && parsed.taxpayer.id) taxpayer.id = parsed.taxpayer.id;
+      // #region agent log
+      __dbgTaxpayer('C', 'processFiles_afterPdf', {
+        pdf: pdf.name,
+        prevNameLen,
+        parsedNameLen: (parsed.taxpayer.name || '').length,
+        newNameLen: (taxpayer.name || '').length,
+        prevIdLen,
+        parsedIdLen: (parsed.taxpayer.id || '').length,
+        newIdLen: (taxpayer.id || '').length,
+        tookLongerName:
+          !!parsed.taxpayer.name &&
+          (!prevNameLen || parsed.taxpayer.name.length > prevNameLen),
+      });
+      // #endregion
 
-      allRecords.push(
-        ...parsed.records.filter((r) => isValidTaxType(r.type))
-      );
+      if (
+        taxpayer.name &&
+        parsed.taxpayer.name &&
+        parsed.taxpayer.name !== taxpayer.name &&
+        !taxpayer.name.includes(parsed.taxpayer.name) &&
+        !parsed.taxpayer.name.includes(taxpayer.name)
+      ) {
+        warnings.push(`${pdf.name} 纳税人名称与其它文件不一致，已采用较长名称`);
+      }
+
+      allRecords.push(...parsed.records.filter((r) => isValidTaxType(r.type)));
     }
+
+    const mergedFullText = mergedFullTextParts.join('\n');
 
     lastTaxpayerRaw = { name: taxpayer.name, id: taxpayer.id };
     lastTaxpayerChecks = taxpayerChecks;
 
-    const completeness = validateCertificateCompleteness(certMetaList);
+    const completeness =
+      auditMode === 'personal'
+        ? {
+            ok: true,
+            issues: [],
+            warnings: [],
+            notes: [
+              '个人所得税（上海）模式：已校验为单个 PDF，且未发现同一文件内多个不同的证明编号；不对文书式「第 X 页/共 Y 页」做强校验（纳税记录常为多页加密 PDF）。',
+            ],
+            certNos: [],
+            multiComplete: false,
+          }
+        : validateCertificateCompleteness(certMetaList);
     lastCertNos = completeness.certNos || [];
     lastCompletenessResult = completeness;
     renderCompleteness(completeness);
@@ -1453,6 +2767,7 @@ async function processFiles(files) {
         '<tr><td colspan="3" class="empty-hint">完税证明完整性校验未通过，请重新上传符合规范的原件（单页 PDF、证明编号与页码齐全）后重试。</td></tr>';
       removedSection.style.display = 'none';
       if (judgmentSection) judgmentSection.style.display = 'none';
+      judgmentSnapshot = null;
       return;
     }
 
@@ -1463,7 +2778,7 @@ async function processFiles(files) {
       return;
     }
 
-    const blacklist = buildBlacklist(allRecords);
+    const blacklist = buildBlacklist(allRecords, auditMode);
     const validRecords = filterAndSort(allRecords, blacklist);
 
     resultBody.innerHTML = '';
@@ -1471,15 +2786,7 @@ async function processFiles(files) {
       resultBody.innerHTML =
         '<tr><td colspan="3" class="empty-hint">过滤后无剩余记录</td></tr>';
     } else {
-      for (const r of validRecords) {
-        const tr = document.createElement('tr');
-        tr.innerHTML = `
-          <td class="period">${escapeHtml(r.period)}</td>
-          <td>${escapeHtml(r.type)}</td>
-          <td class="amount">¥${r.amount.toFixed(2)}</td>
-        `;
-        resultBody.appendChild(tr);
-      }
+      appendMonthGroupedTableRows(resultBody, validRecords, auditMode === 'personal');
     }
 
     if (blacklist.size > 0) {
@@ -1493,10 +2800,30 @@ async function processFiles(files) {
       }
     }
 
-    summary.textContent = `共 ${validRecords.length} 条有效记录，原始 ${allRecords.length} 条，剔除 ${blacklist.size} 个异常组合`;
+    const dispGroups = groupRecordsByTaxMonthForDisplay(validRecords);
+    const mergeHint = dispGroups.some((g) => g.rows.length > 1)
+      ? `；同一税款所属自然月已合并首列展示（${dispGroups.length} 组，${validRecords.length} 条明细）`
+      : '';
+    summary.textContent = `共 ${validRecords.length} 条有效记录，原始 ${allRecords.length} 条，剔除 ${blacklist.size} 个异常组合${mergeHint}`;
 
+    judgmentSnapshot = null;
+    let lastJudgmentResult = null;
     if (judgmentEnabled && validRecords.length > 0) {
-      renderJudgment(evaluateEligibility(validRecords, new Date()));
+      const refDate = new Date();
+      judgmentSnapshot = {
+        validRecords: validRecords.slice(),
+        mergedFullText,
+        refDate,
+      };
+      lastJudgmentResult =
+        auditMode === 'personal'
+          ? evaluatePersonalEligibility(
+              validRecords,
+              refDate,
+              mergedFullText
+            )
+          : evaluateEligibility(validRecords, refDate);
+      renderJudgment(lastJudgmentResult);
     }
   } catch (err) {
     summary.textContent = '处理失败';
@@ -1531,7 +2858,9 @@ function maskName(name) {
   const tail = suffix || s.slice(-1);
   const head = core.slice(0, Math.min(2, core.length));
   const tailCore = suffix ? '' : core.slice(-1);
-  const stars = '＊'.repeat(Math.max(2, Math.min(8, core.length - head.length - (tailCore ? 1 : 0))));
+  const stars = '＊'.repeat(
+    Math.max(2, Math.min(8, core.length - head.length - (tailCore ? 1 : 0)))
+  );
   return head + stars + tailCore + tail;
 }
 
@@ -1569,9 +2898,7 @@ function maskPIIInMessage(text) {
     lastTaxpayerRaw.name,
     ...lastTaxpayerChecks.map((t) => t.name),
   ].filter(Boolean);
-  const ids = [lastTaxpayerRaw.id, ...lastTaxpayerChecks.map((t) => t.id)].filter(
-    Boolean
-  );
+  const ids = [lastTaxpayerRaw.id, ...lastTaxpayerChecks.map((t) => t.id)].filter(Boolean);
   const certs = [...lastCertNos];
   for (const name of [...new Set(names)].sort((a, b) => b.length - a.length)) {
     out = out.split(name).join(maskName(name));
@@ -1683,6 +3010,85 @@ function formatMonthLabel(key) {
   return `${y}年${+m}月`;
 }
 
+/**
+ * 按「税款所属期」同一自然月分组（仅跨单日历月的记录参与合并；跨多月或无法解析的各成一组）。
+ */
+function groupRecordsByTaxMonthForDisplay(records) {
+  const monthMap = new Map();
+  const singles = [];
+
+  for (const r of records) {
+    const range = parsePeriodRange(r.period);
+    if (!range) {
+      singles.push({ kind: 'single', rows: [r] });
+      continue;
+    }
+    const monthKeys = [...expandPeriodToMonthKeys(range)];
+    if (monthKeys.length !== 1) {
+      singles.push({ kind: 'single', rows: [r] });
+      continue;
+    }
+    const mk = monthKeys[0];
+    if (!monthMap.has(mk)) monthMap.set(mk, []);
+    monthMap.get(mk).push(r);
+  }
+
+  const groups = [];
+  for (const mk of [...monthMap.keys()].sort((a, b) => a.localeCompare(b))) {
+    const rows = monthMap.get(mk);
+    rows.sort(
+      (a, b) =>
+        periodStartKey(a.period).localeCompare(periodStartKey(b.period)) ||
+        a.type.localeCompare(b.type, 'zh-CN')
+    );
+    groups.push({ kind: 'month', monthKey: mk, rows });
+  }
+  groups.push(...singles);
+
+  groups.sort((a, b) =>
+    periodStartKey(a.rows[0].period).localeCompare(periodStartKey(b.rows[0].period))
+  );
+  return groups;
+}
+
+/**
+ * 首列 rowspan 合并同一自然月，其后每行仍展示一条税种明细（公司与个人模式通用）。
+ */
+function appendMonthGroupedTableRows(tbody, records, isPersonal) {
+  const groups = groupRecordsByTaxMonthForDisplay(records);
+  for (const g of groups) {
+    const rows = g.rows;
+    const n = rows.length;
+    for (let i = 0; i < n; i++) {
+      const r = rows[i];
+      const tr = document.createElement('tr');
+      if (isPersonal && r.excludeFromMonthCount) tr.className = 'tr-warn-remark';
+
+      let firstCell = '';
+      if (g.kind === 'month' && i === 0) {
+        const warnAny = isPersonal && rows.some((x) => x.excludeFromMonthCount);
+        const mc = warnAny ? 'month-cell has-warn' : 'month-cell';
+        firstCell = `<td rowspan="${n}" class="${mc}">${escapeHtml(
+          `${formatMonthLabel(g.monthKey)}（${n}条）`
+        )}</td>`;
+      } else if (g.kind === 'single') {
+        firstCell = `<td class="period">${escapeHtml(r.period)}</td>`;
+      }
+
+      if (isPersonal && r.excludeFromMonthCount) {
+        tr.title = r.remarkText
+          ? `备注：${r.remarkText}（不计入缴费月份统计）`
+          : '备注含补缴或滞纳金（不计入缴费月份统计）';
+      }
+
+      tr.innerHTML = `${firstCell}<td>${escapeHtml(r.type)}</td><td class="amount">¥${r.amount.toFixed(
+        2
+      )}</td>`;
+      tbody.appendChild(tr);
+    }
+  }
+}
+
 function getLatestEndMonthKey(records) {
   let max = '';
   for (const r of records) {
@@ -1722,14 +3128,14 @@ function isQuarterLikeRange(range) {
   return span >= 2 && span <= 3;
 }
 
-/** 自然季度起止日：Q1=1-3月 … Q2=4-6月 … */
+/** 自然季度起止：Q2 = 4～6 月 */
 function getNaturalQuarterBounds(year, q) {
   const start = new Date(year, (q - 1) * 3, 1);
   const end = new Date(year, q * 3, 0);
   return { start, end };
 }
 
-/** 仅当税款所属期覆盖该季全部月份时计入（如 Q2 须含 4月1日～6月30日；仅 6月单月不算 Q2） */
+/** 所属期须完整覆盖该自然季度（仅 6 月单月不算 Q2） */
 function recordCoversNaturalQuarter(range, year, q) {
   const bounds = getNaturalQuarterBounds(year, q);
   return range.start <= bounds.start && range.end >= bounds.end;
@@ -1752,17 +3158,12 @@ function findFourConsecutiveQuarters(quarterSet) {
       indices[i + 2] === indices[i] + 2 &&
       indices[i + 3] === indices[i] + 3
     ) {
-      return {
-        ok: true,
-        start: indices[i],
-        end: indices[i + 3],
-      };
+      return { ok: true, start: indices[i], end: indices[i + 3] };
     }
   }
   return { ok: false };
 }
 
-/** 按「所属期完整覆盖自然季度」统计（见 recordCoversNaturalQuarter） */
 function getQuarterSetFromRecords(records) {
   const quarters = new Set();
   for (const r of records) {
@@ -1792,18 +3193,13 @@ function getMinAcceptableQuarterEndKey(refDate) {
   return monthKeyFromParts(y, qIndex * 3);
 }
 
-function monthKeyToQuarterKey(monthKey) {
-  const [y, m] = monthKey.split('-').map(Number);
-  return `${y}-Q${Math.ceil(m / 3)}`;
-}
-
 function quarterIndexToLabel(idx) {
   const y = Math.floor(idx / 4);
   const q = (idx % 4) + 1;
   return `${y}-Q${q}`;
 }
 
-/** 连续4个自然季度内均有缴税即可，不要求同一税种 */
+/** 连续 4 个自然季度均有缴税（不分税种），所属期须覆盖整季 */
 function evaluateGlobalQuarterly(records, ctx) {
   const quarterSet = getQuarterSetFromRecords(records);
   let latestEnd = '';
@@ -1889,6 +3285,216 @@ function evaluateGlobalMonthly(records, anchorEnd) {
   };
 }
 
+function isPersonalIncomeTaxType(type) {
+  const s = String(type || '');
+  if (/企业所得税/.test(s)) return false;
+  if (/个人所得税/.test(s)) return true;
+  if (
+    /(工资薪金|劳务报酬|稿酬|特许权使用费|经营所得|偶然所得|财产租赁|财产转让|利息股息红利)/.test(
+      s
+    )
+  ) {
+    return true;
+  }
+  return false;
+}
+
+function isShanghaiTaxCertificateText(fullText) {
+  const t = String(fullText || '');
+  return (
+    /国家税务总局上海市|上海市税务局/.test(t) ||
+    (/上海市/.test(t) && /税务局/.test(t))
+  );
+}
+
+function build48MonthWindow(endMonthKey) {
+  const months = [];
+  for (let i = 47; i >= 0; i--) {
+    months.push(shiftMonthKey(endMonthKey, -i));
+  }
+  return months;
+}
+
+function getLatestEndMonthKeyFiltered(records, predicate) {
+  let max = '';
+  for (const r of records) {
+    if (!predicate(r)) continue;
+    const range = parsePeriodRange(r.period);
+    if (!range) continue;
+    const k = monthKeyFromDate(range.end);
+    if (k > max) max = k;
+  }
+  return max || null;
+}
+
+/** 个人审核计月：按税款所属期；实缴含 0；入库机关须为上海；备注含补缴/滞纳金的行不计入月份（但保留在表中） */
+function personalRecordCountsForJudgment(r) {
+  if (r.excludeFromMonthCount) return false;
+  if (!isPersonalIncomeTaxType(r.type)) return false;
+  if (r.amount < 0) return false;
+  if (!r.authority || !isShanghaiTaxOffice(r.authority)) return false;
+  return true;
+}
+
+function buildPersonalPitCoverageMonths(records) {
+  /** 按「税款所属期」展开到自然月键；Set 去重，故同一自然月多条不同所得项目仍只计 1 个月 */
+  const months = new Set();
+  for (const r of records) {
+    if (!personalRecordCountsForJudgment(r)) continue;
+    const range = parsePeriodRange(r.period);
+    if (range) {
+      for (const k of expandPeriodToMonthKeys(range)) {
+        months.add(k);
+      }
+    }
+  }
+  return months;
+}
+
+function evaluatePersonalEligibility(records, refDate, mergedFullText) {
+  const ctx = getSubmitContext(refDate);
+  const issues = [];
+  const passes = [];
+
+  if (!isShanghaiTaxCertificateText(mergedFullText)) {
+    issues.push(
+      '全文未识别到上海市税务机关表述（抬头/落款）；请核对是否为上海出具的纳税记录。'
+    );
+  }
+
+  const pitRows = records.filter(personalRecordCountsForJudgment);
+  const warnRemarkRows = records.filter((r) => r.excludeFromMonthCount);
+  if (warnRemarkRows.length) {
+    passes.push(
+      `共 ${warnRemarkRows.length} 行「备注」中含补缴或滞纳金：已在表格中高亮，不计入下方「有效缴费月份」统计。`
+    );
+  }
+  if (pitRows.length === 0) {
+    return {
+      verdict: 'fail',
+      title: '初步判断：不符合',
+      summary:
+        '未识别到可用于判断的明细：个人模式要求表中含「税款所属期」「实缴（退）金额」「入库税务机关（上海市）」；金额允许为 0.00；负金额不计入；备注含补缴/滞纳金的行不计入月份但仍会显示在表中。',
+      passes: passes.slice(),
+      issues,
+      ctx,
+      latestEnd: null,
+      passMode: 'personal-pit',
+      window: [],
+      personalMode: true,
+      coveredCount: 0,
+      window48: [],
+      windowMonthTotal: 48,
+    };
+  }
+
+  const latestEnd = getLatestEndMonthKeyFiltered(records, personalRecordCountsForJudgment);
+  if (!latestEnd) {
+    return {
+      verdict: 'fail',
+      title: '初步判断：不符合',
+      summary: '无法从符合条件的记录解析「税款所属期」结束月。',
+      passes: passes.slice(),
+      issues,
+      ctx,
+      latestEnd: null,
+      passMode: 'personal-pit',
+      window: [],
+      personalMode: true,
+      coveredCount: 0,
+      window48: [],
+      windowMonthTotal: 48,
+    };
+  }
+
+  const anchorOk = latestEnd === ctx.n1Key || latestEnd === ctx.n2Key;
+  if (!anchorOk) {
+    issues.push(
+      `个人所得税（已限上海入库机关）相关记录的最晚「税款所属期」结束月为 ${formatMonthLabel(latestEnd)}，不在 N-1 / N-2 可接受范围（须为 ${ctx.n1Label} 或 ${ctx.n2Label}）作为倒推起点。`
+    );
+  } else {
+    passes.push(
+      `最晚「税款所属期」结束月 ${formatMonthLabel(latestEnd)} 在 N-1 / N-2 范围内（计月以税款所属期为准，不看申报日期）。`
+    );
+  }
+
+  const window48 = build48MonthWindow(latestEnd);
+  const covered = buildPersonalPitCoverageMonths(records);
+
+  const monthToTypes = new Map();
+  for (const r of pitRows) {
+    const range = parsePeriodRange(r.period);
+    if (!range) continue;
+    for (const k of expandPeriodToMonthKeys(range)) {
+      if (!monthToTypes.has(k)) monthToTypes.set(k, new Set());
+      monthToTypes.get(k).add(r.type || '');
+    }
+  }
+  const multiTypeMonthCount = [...monthToTypes.values()].filter((s) => s.size > 1).length;
+  if (multiTypeMonthCount > 0) {
+    passes.push(
+      `共有 ${multiTypeMonthCount} 个「税款所属期」自然月存在多种不同所得项目；月份统计按自然月去重，每月最多计 1 次。`
+    );
+  }
+
+  let coveredInWin = 0;
+  const missingInWin = [];
+  for (const k of window48) {
+    if (covered.has(k)) coveredInWin++;
+    else missingInWin.push(k);
+  }
+
+  if (anchorOk) {
+    if (coveredInWin >= 36) {
+      passes.push(
+        `自 ${formatMonthLabel(window48[0])} 至 ${formatMonthLabel(window48[47])} 共 48 个自然月内，按「税款所属期」且「实缴（退）金额」含 0.00、「入库税务机关」为上海的有效月份共 ${coveredInWin} 个月（同月多种所得项目按自然月只计 1 次），达到不少于 36 个月的要求。`
+      );
+    } else {
+      issues.push(`上述 48 个月窗口内，符合条件的月份数为 ${coveredInWin}，未满 36 个月。`);
+      if (missingInWin.length && missingInWin.length <= 18) {
+        issues.push(`未覆盖月份示例：${missingInWin.map(formatMonthLabel).join('、')}`);
+      }
+    }
+  }
+
+  let verdict = 'fail';
+  let title = '初步判断：不符合';
+  const docShanghai = isShanghaiTaxCertificateText(mergedFullText);
+
+  if (anchorOk && coveredInWin >= 36 && docShanghai) {
+    verdict = 'pass';
+    title = '初步判断：符合（个人所得税·上海）';
+  } else if (anchorOk && coveredInWin >= 36 && !docShanghai) {
+    verdict = 'warn';
+    title = '初步判断：存疑（全文未确认上海税务机关）';
+  } else if (coveredInWin >= 36 && !anchorOk) {
+    verdict = 'warn';
+    title = '初步判断：存疑（月份达标但锚点不符）';
+  } else if (issues.length && passes.length) {
+    verdict = 'warn';
+    title = '初步判断：存疑';
+  }
+
+  return {
+    verdict,
+    title,
+    summary:
+      verdict === 'pass'
+        ? '基于当前材料，在「税款所属期 + 实缴金额（含零）+ 上海入库机关」规则下，初步满足 48 个月内累计 36 个月等要求。本工具不验章，请以政务平台为准。'
+        : '未能满足个人审核规则或未识别足够个税月份。本工具不验章，请以政务平台为准。',
+    passes,
+    issues,
+    ctx,
+    latestEnd,
+    passMode: 'personal-pit',
+    window: window48,
+    personalMode: true,
+    coveredCount: coveredInWin,
+    window48,
+    windowMonthTotal: 48,
+  };
+}
+
 function evaluateEligibility(records, refDate) {
   const ctx = getSubmitContext(refDate);
   const issues = [];
@@ -1901,8 +3507,25 @@ function evaluateEligibility(records, refDate) {
       title: '初步判断：不符合',
       summary: '无法解析税款所属时期，无法判断连续性。',
       items: [],
+      passes: [],
+      issues: [],
       ctx,
+      latestEnd: null,
+      passMode: '',
+      window: [],
+      coveredCount: null,
+      windowMonthTotal: null,
     };
+  }
+
+  const globalLong = records.filter((r) => {
+    const range = parsePeriodRange(r.period);
+    return range && periodSpanMonths(range) > 3;
+  });
+  if (globalLong.length) {
+    issues.push(
+      `共 ${globalLong.length} 条所属期跨度超过3个月（单条最长不得超过一个季度）。`
+    );
   }
 
   const anchorOk = latestEnd === ctx.n1Key || latestEnd === ctx.n2Key;
@@ -1949,16 +3572,21 @@ function evaluateEligibility(records, refDate) {
     } else {
       issues.push(monthly.reason);
       issues.push(
-        '未满足「连续12个月内有缴税（不分税种）」亦未满足「连续4个季度有缴税」特例'
+        '未满足「连续12个月内有缴税（不分税种）」亦未满足「连续4个自然季度」特例'
       );
     }
   }
 
   let verdict = 'fail';
   let title = '初步判断：不符合';
-  if (continuityOk) {
+  const hasPeriodIssue = globalLong.length > 0;
+
+  if (continuityOk && !hasPeriodIssue) {
     verdict = 'pass';
     title = '初步判断：符合';
+  } else if (continuityOk && hasPeriodIssue) {
+    verdict = 'warn';
+    title = '初步判断：存疑（所属期跨度等）';
   } else if (passes.length > 0) {
     verdict = 'warn';
     title = '初步判断：存疑';
@@ -1966,8 +3594,30 @@ function evaluateEligibility(records, refDate) {
 
   const summaryPass =
     passMode === 'quarterly'
-      ? '已识别连续4个自然季度均有缴税（不分税种），初步满足连续缴纳要求。'
+      ? '已识别连续4个自然季度均有缴税（不分税种，所属期须覆盖整季），初步满足连续缴纳要求。'
       : '滚动12个月内均有缴税记录（不分税种），初步满足连续缴纳要求。';
+
+  const windowKeys =
+    passMode === 'monthly' && anchorOk
+      ? build12MonthWindow(latestEnd)
+      : passMode === 'quarterly' && quarterlyPass
+        ? build12MonthWindow(quarterlyPass.latestEnd)
+        : anchorOk
+          ? build12MonthWindow(latestEnd)
+          : [];
+
+  const coverageAll = getGlobalMonthCoverage(records);
+  let coveredCount = null;
+  let windowMonthTotal = null;
+  if (windowKeys.length === 12) {
+    windowMonthTotal = 12;
+    coveredCount = windowKeys.filter((k) => coverageAll.has(k)).length;
+  } else if (latestEnd) {
+    /** 与规则窗口不一致时仍展示关键指标：以全表最晚所属期结束月倒推 12 个自然月内有缴税的月份数 */
+    const kpi12 = build12MonthWindow(latestEnd);
+    windowMonthTotal = 12;
+    coveredCount = kpi12.filter((k) => coverageAll.has(k)).length;
+  }
 
   return {
     verdict,
@@ -1981,14 +3631,9 @@ function evaluateEligibility(records, refDate) {
     ctx,
     latestEnd,
     passMode,
-    window:
-      passMode === 'monthly' && anchorOk
-        ? build12MonthWindow(latestEnd)
-        : passMode === 'quarterly' && quarterlyPass
-          ? build12MonthWindow(quarterlyPass.latestEnd)
-          : anchorOk
-            ? build12MonthWindow(latestEnd)
-            : [],
+    window: windowKeys,
+    coveredCount,
+    windowMonthTotal,
   };
 }
 
@@ -1998,13 +3643,43 @@ function renderJudgment(result) {
   judgmentSection.className = 'judgment-section ' + result.verdict;
 
   judgmentTitle.textContent = result.title;
+
+  const judgmentKpiWrap = document.getElementById('judgmentKpiWrap');
+  const judgmentKpiNum = document.getElementById('judgmentKpiNum');
+  const judgmentKpiDenom = document.getElementById('judgmentKpiDenom');
+  const judgmentKpiNote = document.getElementById('judgmentKpiNote');
+  if (judgmentKpiWrap && judgmentKpiNum && judgmentKpiDenom && judgmentKpiNote) {
+    if (result.personalMode) {
+      const n = result.coveredCount != null ? result.coveredCount : 0;
+      judgmentKpiNum.textContent = String(n);
+      judgmentKpiDenom.textContent =
+        '/' + (result.windowMonthTotal != null ? result.windowMonthTotal : 48);
+      judgmentKpiNote.textContent =
+        '规则摘要：「窗口」为最近 48 个自然月（按税款所属期）；须不少于 36 个月有在沪个税有效申报；同月多种所得只计 1 次；实缴含 0；补缴/滞纳金行见表内高亮不计入。';
+      judgmentKpiWrap.hidden = false;
+    } else if (
+      !result.personalMode &&
+      result.latestEnd &&
+      result.windowMonthTotal === 12 &&
+      typeof result.coveredCount === 'number'
+    ) {
+      judgmentKpiNum.textContent = String(result.coveredCount);
+      judgmentKpiDenom.textContent = '/12';
+      judgmentKpiNote.textContent =
+        '规则摘要：以全表最晚所属期结束月为锚，倒推 12 个自然月内有缴税的月份数（满分 12）。按季特例须连续 4 个自然季度且所属期覆盖整季（如 Q2=4～6 月）；通过时本数可能小于 12，以「通过项」为准。';
+      judgmentKpiWrap.hidden = false;
+    } else {
+      judgmentKpiWrap.hidden = true;
+    }
+  }
+
   let html = `<p>${escapeHtml(result.summary)}</p>`;
-  if (result.passes.length) {
+  if ((result.passes || []).length) {
     html += '<p><strong>通过项：</strong></p><ul>';
     for (const p of result.passes) html += `<li>${escapeHtml(p)}</li>`;
     html += '</ul>';
   }
-  if (result.issues.length) {
+  if ((result.issues || []).length) {
     html += '<p><strong>问题项：</strong></p><ul>';
     for (const p of result.issues) html += `<li>${escapeHtml(p)}</li>`;
     html += '</ul>';
@@ -2012,15 +3687,34 @@ function renderJudgment(result) {
   judgmentDetail.innerHTML = html;
 
   const win =
-    result.window && result.window.length
-      ? `${formatMonthLabel(result.window[0])}～${formatMonthLabel(result.window[11])}`
-      : '—';
-  judgmentMeta.textContent =
-    `提交日基准：${result.ctx.refLabel}；` +
-    `可接受最晚所属期结束月：${result.ctx.n1Label} 或 ${result.ctx.n2Label}；` +
-    `本工具识别最晚结束月：${result.latestEnd ? formatMonthLabel(result.latestEnd) : '—'}；` +
-    `滚动12个月窗口：${win}（该窗口内每月至少有一条缴税即可，不分税种）。` +
-    `不验电子签章。仅供参考，以政务平台核验为准。`;
+    result.window && result.window.length === 48
+      ? `${formatMonthLabel(result.window[0])}～${formatMonthLabel(result.window[47])}（计月按税款所属期）`
+      : result.window && result.window.length
+        ? `${formatMonthLabel(result.window[0])}～${formatMonthLabel(result.window[11])}`
+        : '—';
+
+  if (result.personalMode) {
+    judgmentMeta.textContent =
+      `提交日基准：${result.ctx.refLabel}；` +
+      `可接受最晚「税款所属期」结束月：${result.ctx.n1Label} 或 ${result.ctx.n2Label}；` +
+      `本工具识别最晚结束月：${result.latestEnd ? formatMonthLabel(result.latestEnd) : '—'}；` +
+      `48 个月窗口：${win}。` +
+      `有效月份数见上方高亮。不验电子签章。仅供参考，以政务平台核验为准。`;
+  } else {
+    const kpiShown =
+      !!result.latestEnd &&
+      result.windowMonthTotal === 12 &&
+      typeof result.coveredCount === 'number';
+    judgmentMeta.textContent =
+      `提交日基准：${result.ctx.refLabel}；` +
+      `可接受最晚所属期结束月：${result.ctx.n1Label} 或 ${result.ctx.n2Label}；` +
+      `本工具识别最晚结束月：${result.latestEnd ? formatMonthLabel(result.latestEnd) : '—'}；` +
+      `滚动12个月窗口：${win}。` +
+      (kpiShown
+        ? '窗口内「有缴税记录」月份数见上方高亮（单位模式：以最晚结束月为锚的 12 月计数）。'
+        : '未能统计月份数（例如未识别到可作为锚点的最晚所属期）。') +
+      `不验电子签章。仅供参考，以政务平台核验为准。`;
+  }
 }
 </script>
 </body>
