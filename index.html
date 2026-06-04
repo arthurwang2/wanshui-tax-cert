@@ -1570,18 +1570,28 @@ function extractAmountFromWenshuRow(line, buckets) {
   return Number.isNaN(amount) ? null : amount;
 }
 
+/** 表尾 ¥ 后金额（允许数字间被 PDF 拆空格，如 ¥ 168 898.72） */
+function parseYenAmountAfterSymbol(chunk) {
+  if (!chunk) return null;
+  const re = /[¥￥]\s*([\d,\s]+)\.(\d{2})\b/g;
+  const candidates = [];
+  for (const m of chunk.matchAll(re)) {
+    const intPart = m[1].replace(/[\s,]/g, '');
+    if (!intPart) continue;
+    const n = parseFloat(`${intPart}.${m[2]}`);
+    if (!Number.isNaN(n)) candidates.push(n);
+  }
+  return candidates.length ? Math.max(...candidates) : null;
+}
+
 /** 文书式表尾「金额合计（大写）」对应小写金额（模版右下角） */
 function extractWenshuCertificateTotal(fullText, pageRows) {
   const amountFromChunk = (chunk) => {
     if (!chunk) return null;
-    const withYen = [
-      ...chunk.matchAll(/(?:¥|￥)\s*(-?\d{1,3}(?:,\d{3})*\.\d{2})/g),
-    ].map((m) => parseAmount(m[1]));
-    if (withYen.length) return withYen[withYen.length - 1];
-    const plain = [...chunk.matchAll(/-?\d{1,3}(?:,\d{3})*\.\d{2}/g)].map((m) =>
-      parseAmount(m[0])
-    );
-    return plain.length ? plain[plain.length - 1] : null;
+    const yen = parseYenAmountAfterSymbol(chunk);
+    if (yen != null) return yen;
+    const plain = [...chunk.matchAll(AMOUNT_RE)].map((m) => parseAmount(m[0]));
+    return plain.length ? Math.max(...plain) : null;
   };
 
   const pages = [...(pageRows || [])].sort((a, b) => (b.page || 0) - (a.page || 0));
@@ -1602,17 +1612,15 @@ function extractWenshuCertificateTotal(fullText, pageRows) {
     const n = amountFromChunk(t.slice(idx, idx + 320));
     if (n != null && !Number.isNaN(n)) return n;
   }
-  const patterns = [
-    /金额合计[\s\S]{0,320}?(?:¥|￥)\s*(-?\d{1,3}(?:,\d{3})*\.\d{2})/,
-    /小写[^0-9¥￥]{0,60}(?:¥|￥)?\s*(-?\d{1,3}(?:,\d{3})*\.\d{2})/,
-    /金额合计[^0-9¥￥]{0,120}(-?\d{1,3}(?:,\d{3})*\.\d{2})/,
-  ];
-  for (const re of patterns) {
-    const m = t.match(re);
-    if (m) {
-      const n = parseAmount(m[1]);
-      if (!Number.isNaN(n)) return n;
-    }
+  const tail = t.match(/金额合计[\s\S]{0,400}/);
+  if (tail) {
+    const n = parseYenAmountAfterSymbol(tail[0]);
+    if (n != null) return n;
+  }
+  const xiao = t.match(/小写[\s\S]{0,80}/);
+  if (xiao) {
+    const n = parseYenAmountAfterSymbol(xiao[0]);
+    if (n != null) return n;
   }
   return null;
 }
