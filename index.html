@@ -862,7 +862,8 @@ function pad2(n) {
 
 function normalizePeriod(y1, m1, d1, y2, m2, d2) {
   const day1 = d1 && d1 !== '0' ? pad2(d1) : '01';
-  const day2 = d2 && d2 !== '0' ? pad2(d2) : '28';
+  const day2 =
+    d2 && d2 !== '0' ? pad2(d2) : d1 && d1 !== '0' ? pad2(d1) : '28';
   return `${y1}-${pad2(m1)}-${day1} 至 ${y2}-${pad2(m2)}-${day2}`;
 }
 
@@ -1343,7 +1344,10 @@ function assignColumn(x, anchors, str) {
     const periodA = anchors.find((a) => a.key === 'period');
     const payA = anchors.find((a) => a.key === 'payDate');
     if (periodA && payA) {
-      return x < (periodA.x + payA.x) / 2 ? 'period' : 'payDate';
+      const mid = (periodA.x + payA.x) / 2;
+      const periodW = payA.x - periodA.x;
+      if (x < periodA.x + periodW * 0.62) return 'period';
+      return 'payDate';
     }
     if (periodA) return 'period';
   }
@@ -1372,13 +1376,271 @@ function stripDatesFromTaxType(raw) {
     .trim();
 }
 
+/** 从整行文本还原所属期（含「单日 + 入库日」双日期、无「至」） */
+function resolvePeriodFromDatesOnLine(line) {
+  if (!line) return null;
+  const p = matchPeriod(line);
+  if (p) return p;
+  const rangeM = line.match(/(\d{4}-\d{2}-\d{2})\s*至\s*(\d{4}-\d{2}-\d{2})/);
+  if (rangeM) return `${rangeM[1]} 至 ${rangeM[2]}`;
+  const stripped = String(line)
+    .replace(AMOUNT_RE, '')
+    .replace(/¥|￥/g, '')
+    .trim();
+  const dates = [...stripped.matchAll(/\d{4}-\d{2}-\d{2}/g)].map((m) => m[0]);
+  if (dates.length === 0) return null;
+  if (dates.length === 1) return `${dates[0]} 至 ${dates[0]}`;
+  if (dates.length === 2) return `${dates[0]} 至 ${dates[0]}`;
+  const d0 = dates[0];
+  const d1 = dates[1];
+  const daySpan =
+    (new Date(d1.replace(/-/g, '/')) - new Date(d0.replace(/-/g, '/'))) /
+    86400000;
+  if (daySpan >= 0 && daySpan <= 120) return `${d0} 至 ${d1}`;
+  return `${d0} 至 ${d0}`;
+}
+
+function extractTaxTypeFromKnownKeywords(line) {
+  const m = String(line || '').match(
+    /(增值税|企业所得税|消费税|城市维护建设税|城建税|教育费附加|地方教育附加|印花税|契税|土地增值税|房产税|城镇土地使用税|车船税|车辆购置税|个人所得税|资源税|环境保护税|关税|耕地占用税|水利建设|残疾人就业|文化事业|工会经费)(?:\s*[\(（][^)）]*[\)）])?/
+  );
+  return m ? stripDatesFromTaxType(cleanTaxType(m[0])) : '';
+}
+
+function isLikelyWenshuDataLine(line) {
+  if (!line || line.length < 6) return false;
+  if (/^第\s*\d+\s*页/.test(line)) return false;
+  if (
+    /金额合计|小写|大写|本凭证不作|填表人|税收完税证明|纳税人名称|纳税人识别号|统一社会信用/.test(
+      line
+    )
+  )
+    return false;
+  if (isWenshuRepeatHeaderLine(line)) return false;
+  if (!AMOUNT_RE.test(line)) return false;
+  if (!/\d{4}-\d{2}-\d{2}/.test(line)) return false;
+  if (!KNOWN_TAX_KEYWORDS.test(line) && !/税/.test(line)) return false;
+  if (
+    HEADER_SKIP.test(line) &&
+    !KNOWN_TAX_KEYWORDS.test(line) &&
+    !matchPeriod(line) &&
+    !/\d{4}-\d{2}-\d{2}\s*至/.test(line)
+  )
+    return false;
+  return true;
+}
+
+function mergeTaxRecords(lists) {
+  const seen = new Set();
+  const out = [];
+  for (const list of lists) {
+    for (const r of list || []) {
+      const key = `${r.period}|${r.type}|${r.amount}`;
+      if (seen.has(key)) continue;
+      seen.add(key);
+      out.push(r);
+    }
+  }
+  return out;
+}
+
+function tryParseWenshuDataLine(line, cells) {
+  if (!isLikelyWenshuDataLine(line)) return null;
+  const period =
+    resolvePeriodFromDatesOnLine(line) ||
+    inferPeriodFromPeriodColumn(line);
+  if (!period) return null;
+  const amounts = [...line.matchAll(AMOUNT_RE)].map((m) => m[0]);
+  if (!amounts.length) return null;
+  const amount = parseAmount(amounts[amounts.length - 1]);
+  if (Number.isNaN(amount)) return null;
+  const cellArr = cells && cells.length ? cells : line.split(/\s+/);
+  let type = stripDatesFromTaxType(
+    extractTaxTypeFromRow(line, period, cellArr)
+  );
+  if (!type || type.length < 2) type = extractTaxTypeFromKnownKeywords(line);
+  if (!type || type.length < 2 || HEADER_SKIP.test(type)) return null;
+  return { period, type, amount };
+}
+
+/** 表体行扫描：补抓列坐标解析漏掉的缴税行 */
+function parseWenshuLineRecovery(lines, pageRows) {
+  const records = [];
+  const seenLine = new Set();
+  const feed = (line, cells) => {
+    if (!line || seenLine.has(line)) return;
+    seenLine.add(line);
+    const rec = tryParseWenshuDataLine(line, cells);
+    if (rec) records.push(rec);
+  };
+  for (const { rows } of pageRows || []) {
+    for (const row of rows) feed(row.line, row.cells);
+  }
+  for (const { line, cells } of lines || []) feed(line, cells);
+  return records;
+}
+
+/** 所属期列内仅有单日或起止两日、无「至」连接符时补全 */
+function inferPeriodFromPeriodColumn(periodColText) {
+  const col = String(periodColText || '').trim();
+  if (!col) return null;
+  const p = matchPeriod(col);
+  if (p) return p;
+  const dates = [...col.matchAll(/\d{4}-\d{2}-\d{2}/g)].map((m) => m[0]);
+  if (dates.length === 1) return `${dates[0]} 至 ${dates[0]}`;
+  if (dates.length >= 2) return `${dates[0]} 至 ${dates[dates.length - 1]}`;
+  return null;
+}
+
 function resolvePeriodFromRow(line, buckets) {
-  const parts = [
-    buckets.type.join(' '),
-    buckets.period.join(' '),
-    line,
-  ].join(' ');
-  return matchPeriod(parts) || matchPeriod(line);
+  const periodCol = (buckets.period || []).join(' ').trim();
+  const combined = [buckets.type.join(' '), periodCol, line].join(' ').trim();
+  return (
+    matchPeriod(periodCol) ||
+    inferPeriodFromPeriodColumn(periodCol) ||
+    matchPeriod(combined) ||
+    matchPeriod(line) ||
+    resolvePeriodFromDatesOnLine(periodCol) ||
+    resolvePeriodFromDatesOnLine(line)
+  );
+}
+
+function emptyWenshuBuckets() {
+  return { type: [], period: [], payDate: [], amount: [] };
+}
+
+function mergeWenshuBuckets(a, b) {
+  const out = emptyWenshuBuckets();
+  for (const key of Object.keys(out)) {
+    out[key] = [...(a[key] || []), ...(b[key] || [])];
+  }
+  return out;
+}
+
+function bucketWenshuRowItems(items, anchors) {
+  const buckets = emptyWenshuBuckets();
+  for (const it of items) {
+    buckets[assignColumn(it.x, anchors, it.str)].push(it.str);
+  }
+  return buckets;
+}
+
+function isWenshuRepeatHeaderLine(line) {
+  return /税种/.test(line) && /税款所属/.test(line) && /实缴|金额/.test(line);
+}
+
+function rowHasPeriodHint(line, buckets) {
+  return (
+    !!matchPeriod(line) ||
+    !!inferPeriodFromPeriodColumn((buckets.period || []).join(' ')) ||
+    /\d{4}-\d{2}-\d{2}/.test((buckets.period || []).join(' '))
+  );
+}
+
+function extractAmountFromWenshuRow(line, buckets) {
+  const amountSource = buckets.amount.join(' ') || line;
+  const amounts = [...amountSource.matchAll(AMOUNT_RE)].map((m) => m[0]);
+  if (amounts.length === 0) {
+    const fromLine = [...line.matchAll(AMOUNT_RE)].map((m) => m[0]);
+    if (fromLine.length) amounts.push(fromLine[fromLine.length - 1]);
+  }
+  if (amounts.length === 0) return null;
+  const amount = parseAmount(amounts[amounts.length - 1]);
+  return Number.isNaN(amount) ? null : amount;
+}
+
+/** 文书式 PDF 右下角「金额合计 / 小写」 */
+function extractWenshuCertificateTotal(fullText) {
+  const t = String(fullText || '').replace(/\s+/g, ' ');
+  const patterns = [
+    /金额合计[^0-9\-]{0,40}(-?\d{1,3}(?:,\d{3})*\.\d{2})/,
+    /小写[^0-9]{0,40}(?:¥|￥)?\s*(-?\d{1,3}(?:,\d{3})*\.\d{2})/,
+    /(?:实缴|缴).*?合计[^0-9\-]{0,30}(-?\d{1,3}(?:,\d{3})*\.\d{2})/,
+  ];
+  for (const re of patterns) {
+    const m = t.match(re);
+    if (m) return parseAmount(m[1]);
+  }
+  return null;
+}
+
+function sumParsedRecordAmounts(records) {
+  let s = 0;
+  for (const r of records) {
+    const n = Number(r.amount);
+    if (!Number.isNaN(n)) s += n;
+  }
+  return Math.round(s * 100) / 100;
+}
+
+/** 凭证合计 vs 明细合计；PDF 内疑似数据行数 vs 已解析条数 */
+function reconcileParsedRecords(records, fullText, pageRows) {
+  const warnings = [];
+  const issues = [];
+  const certTotal = extractWenshuCertificateTotal(fullText);
+  const lineSum = sumParsedRecordAmounts(records);
+  if (certTotal != null && Math.abs(certTotal - lineSum) > 0.02) {
+    const msg = `凭证「金额合计」为 ¥${certTotal.toFixed(
+      2
+    )}，解析明细合计为 ¥${lineSum.toFixed(2)}，相差 ¥${Math.abs(
+      certTotal - lineSum
+    ).toFixed(2)}，存在漏行或重复。`;
+    issues.push(msg);
+  }
+  const likelyRows = countLikelyWenshuDataRows(pageRows);
+  if (likelyRows > 0 && records.length < likelyRows) {
+    const msg = `表体约 ${likelyRows} 行缴税数据，仅解析 ${records.length} 条（少 ${
+      likelyRows - records.length
+    } 条）。`;
+    issues.push(msg);
+  }
+  return { certTotal, lineSum, likelyRows, warnings, issues };
+}
+
+/** 单位模式：解析条数/金额必须与凭证一致，否则视为未完整识别 */
+function validateParseIntegrity(records, fullText, pageRows) {
+  const rec = reconcileParsedRecords(records, fullText, pageRows);
+  const issues = [...rec.issues];
+  if (issues.length) {
+    issues.push(
+      '缴税明细须与原件逐条一致后方可判断资格；请换用电子版 PDF 原件或联系维护人员核对版式。'
+    );
+  }
+  return {
+    ok: issues.length === 0,
+    issues,
+    warnings: rec.warnings,
+    certTotal: rec.certTotal,
+    lineSum: rec.lineSum,
+    likelyRows: rec.likelyRows,
+  };
+}
+
+function countLikelyWenshuDataRows(pageRows) {
+  let n = 0;
+  let anchors = null;
+  for (const { rows } of pageRows) {
+    const hi = findWenshuHeader(rows);
+    let start = 0;
+    if (hi >= 0) {
+      anchors = buildColumnAnchors(rows[hi].items);
+      start = hi + 1;
+    } else if (!anchors) continue;
+    for (let r = start; r < rows.length; r++) {
+      const line = rows[r].line;
+      if (!line || WENSHU_TABLE_END.test(line)) break;
+      if (isWenshuRepeatHeaderLine(line)) continue;
+      if (HEADER_SKIP.test(line) && !/\d{4}-\d{2}-\d{2}/.test(line)) continue;
+      if (/^第\s*\d+\s*页/.test(line)) continue;
+      if (
+        AMOUNT_RE.test(line) &&
+        !/金额合计|小写|大写/.test(line) &&
+        (KNOWN_TAX_KEYWORDS.test(line) || /税/.test(line))
+      )
+        n++;
+    }
+  }
+  return n;
 }
 
 function resolveTaxType(line, period, buckets, cells) {
@@ -1394,55 +1656,101 @@ function resolveTaxType(line, period, buckets, cells) {
   if (period) rest = rest.replace(period, '');
   rest = rest.replace(AMOUNT_RE, '').trim();
   type = stripDatesFromTaxType(cleanTaxType(rest));
-  return type;
+  if (type && type.length >= 2) return type;
+  return extractTaxTypeFromKnownKeywords(line);
 }
 
 function parseWenshuTable(pageRows) {
+  const maxPage = pageRows.length
+    ? Math.max(...pageRows.map((pr) => pr.page || 0))
+    : 0;
   const records = [];
   const seen = new Set();
+  let activeAnchors = null;
+  let pending = null;
 
-  for (const { rows } of pageRows) {
+  function flushPending() {
+    if (!pending || !activeAnchors) return;
+    tryPushWenshuRow(pending.line, pending.buckets, pending.cellStrs);
+    pending = null;
+  }
+
+  function tryPushWenshuRow(line, buckets, cellStrs) {
+    let period = resolvePeriodFromRow(line, buckets);
+    if (!period) period = resolvePeriodFromDatesOnLine(line);
+    const amount = extractAmountFromWenshuRow(line, buckets);
+    if (!period || amount == null) return false;
+
+    const type = resolveTaxType(line, period, buckets, cellStrs);
+    if (!type || type.length < 2 || HEADER_SKIP.test(type)) return false;
+
+    const payDate = (buckets.payDate || []).join(' ').trim();
+    const key = `${period}|${type}|${amount}|${payDate}`;
+    if (seen.has(key)) return true;
+    seen.add(key);
+    records.push({ period, type, amount, payDate: payDate || undefined });
+    return true;
+  }
+
+  for (const { page, rows } of pageRows) {
     const hi = findWenshuHeader(rows);
-    if (hi < 0) continue;
+    let startR = 0;
+    if (hi >= 0) {
+      const anchors = buildColumnAnchors(rows[hi].items);
+      if (anchors.length >= 2) activeAnchors = anchors;
+      startR = hi + 1;
+    } else if (!activeAnchors) continue;
 
-    const anchors = buildColumnAnchors(rows[hi].items);
-    if (anchors.length < 2) continue;
-
-    for (let r = hi + 1; r < rows.length; r++) {
+    for (let r = startR; r < rows.length; r++) {
       const { line, items } = rows[r];
-      if (!line || WENSHU_TABLE_END.test(line)) break;
-      if (HEADER_SKIP.test(line) && !matchPeriod(line)) continue;
+      if (!line) continue;
       if (/^第\s*\d+\s*页/.test(line)) continue;
+      if (isWenshuRepeatHeaderLine(line)) continue;
 
-      const buckets = { type: [], period: [], payDate: [], amount: [] };
-      const cellStrs = items.map((i) => i.str);
-      for (const it of items) {
-        buckets[assignColumn(it.x, anchors, it.str)].push(it.str);
+      if (WENSHU_TABLE_END.test(line)) {
+        flushPending();
+        if (/金额合计/.test(line) && page === maxPage) activeAnchors = null;
+        break;
       }
 
-      const period = resolvePeriodFromRow(line, buckets);
-      if (!period) continue;
+      const rowBuckets = bucketWenshuRowItems(items, activeAnchors);
+      const mergedLine = pending
+        ? `${pending.line} ${line}`.replace(/\s+/g, ' ').trim()
+        : line;
+      const mergedBuckets = pending
+        ? mergeWenshuBuckets(pending.buckets, rowBuckets)
+        : rowBuckets;
+      const cellStrs = pending
+        ? [...pending.cellStrs, ...items.map((i) => i.str)]
+        : items.map((i) => i.str);
 
-      const type = resolveTaxType(line, period, buckets, cellStrs);
-      if (!type || type.length < 2 || HEADER_SKIP.test(type)) continue;
-
-      const amountSource = buckets.amount.join(' ') || line;
-      const amounts = [...amountSource.matchAll(AMOUNT_RE)].map((m) => m[0]);
-      if (amounts.length === 0) {
-        const fromLine = [...line.matchAll(AMOUNT_RE)].map((m) => m[0]);
-        if (fromLine.length) amounts.push(fromLine[fromLine.length - 1]);
+      if (
+        HEADER_SKIP.test(line) &&
+        !rowHasPeriodHint(line, rowBuckets) &&
+        extractAmountFromWenshuRow(line, rowBuckets) == null
+      ) {
+        continue;
       }
-      if (amounts.length === 0) continue;
 
-      const amount = parseAmount(amounts[amounts.length - 1]);
-      if (Number.isNaN(amount)) continue;
+      const ctx = { line: mergedLine, buckets: mergedBuckets, cellStrs };
+      const complete = tryPushWenshuRow(
+        ctx.line,
+        ctx.buckets,
+        ctx.cellStrs
+      );
+      if (complete) {
+        pending = null;
+        continue;
+      }
 
-      const key = `${period}|${type}|${amount}`;
-      if (seen.has(key)) continue;
-      seen.add(key);
-      records.push({ period, type, amount });
+      const hasPartial =
+        rowHasPeriodHint(ctx.line, ctx.buckets) ||
+        (ctx.buckets.type.join('').length >= 2 && !HEADER_SKIP.test(ctx.buckets.type.join(' '))) ||
+        extractAmountFromWenshuRow(ctx.line, ctx.buckets) != null;
+      pending = hasPartial ? ctx : null;
     }
   }
+  flushPending();
   return records;
 }
 
@@ -2453,40 +2761,9 @@ function parseRecordsFromLines(lines, pageRows, recordMode) {
     if (personal.length > 0) return personal;
   }
 
-  const wenshu = parseWenshuTable(pageRows);
-  if (wenshu.length > 0) return wenshu;
-
-  const records = [];
-  const seen = new Set();
-
-  for (const { line, cells } of lines) {
-    if (!line || HEADER_SKIP.test(line)) continue;
-    if (/^第\s*\d+\s*页/.test(line)) continue;
-
-    let period = matchPeriod(line);
-    if (!period && recordMode === 'personal') {
-      period = matchPeriodPersonalOnly(line.replace(/\s+/g, ''));
-    }
-    if (!period) continue;
-
-    const amounts = [...line.matchAll(AMOUNT_RE)].map((m) => m[0]);
-    if (amounts.length === 0) continue;
-
-    const amount = parseAmount(amounts[amounts.length - 1]);
-    if (Number.isNaN(amount)) continue;
-
-    let type = stripDatesFromTaxType(extractTaxTypeFromRow(line, period, cells));
-    if (!type || type.length < 2) continue;
-    if (/^\d+(\.\d+)?$/.test(type)) continue;
-
-    const key = `${period}|${type}|${amount}`;
-    if (seen.has(key)) continue;
-    seen.add(key);
-
-    records.push({ period, type, amount });
-  }
-
-  return records;
+  const tableRows = parseWenshuTable(pageRows);
+  const recoveryRows = parseWenshuLineRecovery(lines, pageRows);
+  return mergeTaxRecords([tableRows, recoveryRows]);
 }
 
 /**
@@ -2564,7 +2841,7 @@ async function parsePdfBuffer(arrayBuffer, fileName, password, recordMode) {
   // #endregion
   const records = parseRecordsFromLines(lines, pageRows, recordMode || 'company');
   const certMeta = parseCertMetaFromPdf(numPages, pagesText, fileName, pageRows);
-  return { fileName, taxpayer, records, fullText, certMeta };
+  return { fileName, taxpayer, records, fullText, certMeta, pageRows };
 }
 
 async function extractPdfsFromZip(file) {
@@ -2643,6 +2920,7 @@ async function processFiles(files) {
     let taxpayer = { name: '', id: '' };
     const warnings = [];
     const mergedFullTextParts = [];
+    const allPageRows = [];
     const certMetaList = [];
     const taxpayerChecks = [];
 
@@ -2715,9 +2993,20 @@ async function processFiles(files) {
       }
 
       allRecords.push(...parsed.records.filter((r) => isValidTaxType(r.type)));
+      if (parsed.pageRows) allPageRows.push(...parsed.pageRows);
     }
 
     const mergedFullText = mergedFullTextParts.join('\n');
+
+    let parseIntegrity = { ok: true, issues: [], warnings: [] };
+    if (auditMode === 'company' && allRecords.length > 0) {
+      parseIntegrity = validateParseIntegrity(
+        allRecords,
+        mergedFullText,
+        allPageRows
+      );
+      warnings.push(...(parseIntegrity.warnings || []));
+    }
 
     lastTaxpayerRaw = { name: taxpayer.name, id: taxpayer.id };
     lastTaxpayerChecks = taxpayerChecks;
@@ -2735,6 +3024,24 @@ async function processFiles(files) {
             multiComplete: false,
           }
         : validateCertificateCompleteness(certMetaList);
+    if (!parseIntegrity.ok) {
+      completeness.ok = false;
+      completeness.issues = [
+        ...(completeness.issues || []),
+        ...parseIntegrity.issues,
+      ];
+    } else if (
+      auditMode === 'company' &&
+      parseIntegrity.certTotal != null &&
+      allRecords.length > 0
+    ) {
+      completeness.notes = completeness.notes || [];
+      completeness.notes.push(
+        `缴税明细共 ${allRecords.length} 条，与凭证「金额合计」¥${parseIntegrity.certTotal.toFixed(
+          2
+        )} 一致。`
+      );
+    }
     lastCertNos = completeness.certNos || [];
     lastCompletenessResult = completeness;
     renderCompleteness(completeness);
@@ -2947,7 +3254,7 @@ function parsePeriodRange(periodStr) {
   if (!m) return null;
   return {
     start: new Date(+m[1], +m[2] - 1, +m[3]),
-    end: new Date(+m[4], +m[5] - 1, +m[6]),
+    end: new Date(+m[4], +m[5] - 1, +m[6], 23, 59, 59, 999),
   };
 }
 
@@ -2991,6 +3298,33 @@ function expandPeriodToMonthKeys(range) {
   return keys;
 }
 
+/** 自然月 [year, month] 与所属期区间是否存在日历交集（含仅单日所属期 → 仍计该整月） */
+function monthOverlapsPeriod(year, month, range) {
+  const monthStart = new Date(year, month - 1, 1);
+  const monthEnd = new Date(year, month, 0, 23, 59, 59, 999);
+  return range.start <= monthEnd && range.end >= monthStart;
+}
+
+/** 按日历交集统计所属期覆盖到的自然月（滚动 12 月、个人 48 月计月均用此口径） */
+function getMonthKeysOverlappingPeriod(range) {
+  const keys = new Set();
+  let y = range.start.getFullYear();
+  let m = range.start.getMonth() + 1;
+  const endY = range.end.getFullYear();
+  const endM = range.end.getMonth() + 1;
+  while (y < endY || (y === endY && m <= endM)) {
+    if (monthOverlapsPeriod(y, m, range)) {
+      keys.add(monthKeyFromParts(y, m));
+    }
+    m++;
+    if (m > 12) {
+      m = 1;
+      y++;
+    }
+  }
+  return keys;
+}
+
 function getSubmitContext(refDate) {
   const n1 = shiftMonthKey(monthKeyFromDate(refDate), -1);
   const n2 = shiftMonthKey(monthKeyFromDate(refDate), -2);
@@ -3023,7 +3357,7 @@ function groupRecordsByTaxMonthForDisplay(records) {
       singles.push({ kind: 'single', rows: [r] });
       continue;
     }
-    const monthKeys = [...expandPeriodToMonthKeys(range)];
+    const monthKeys = [...getMonthKeysOverlappingPeriod(range)];
     if (monthKeys.length !== 1) {
       singles.push({ kind: 'single', rows: [r] });
       continue;
@@ -3257,10 +3591,9 @@ function getGlobalMonthCoverage(records) {
   const months = new Set();
   for (const r of records) {
     const range = parsePeriodRange(r.period);
-    if (range) {
-      for (const k of expandPeriodToMonthKeys(range)) {
-        months.add(k);
-      }
+    if (!range) continue;
+    for (const k of getMonthKeysOverlappingPeriod(range)) {
+      months.add(k);
     }
   }
   return months;
@@ -3273,14 +3606,14 @@ function evaluateGlobalMonthly(records, anchorEnd) {
   if (missing.length) {
     return {
       ok: false,
-      reason: `滚动12个月中以下月份无任何缴税记录：${missing.map(formatMonthLabel).join('、')}`,
+      reason: `滚动12个月中以下月份与任一条款所属期无日历交集（无缴税记录）：${missing.map(formatMonthLabel).join('、')}`,
       window,
       missing,
     };
   }
   return {
     ok: true,
-    reason: `滚动12个月内均有缴税（不分税种，${formatMonthLabel(window[0])}～${formatMonthLabel(window[11])}）`,
+    reason: `滚动12个月内均有缴税（不分税种；所属期与每月存在日历交集即计该月，含单日所属期；${formatMonthLabel(window[0])}～${formatMonthLabel(window[11])}）`,
     window,
   };
 }
@@ -3337,15 +3670,14 @@ function personalRecordCountsForJudgment(r) {
 }
 
 function buildPersonalPitCoverageMonths(records) {
-  /** 按「税款所属期」展开到自然月键；Set 去重，故同一自然月多条不同所得项目仍只计 1 个月 */
+  /** 按所属期与自然月的日历交集计月；同月多条所得只计 1 次 */
   const months = new Set();
   for (const r of records) {
     if (!personalRecordCountsForJudgment(r)) continue;
     const range = parsePeriodRange(r.period);
-    if (range) {
-      for (const k of expandPeriodToMonthKeys(range)) {
-        months.add(k);
-      }
+    if (!range) continue;
+    for (const k of getMonthKeysOverlappingPeriod(range)) {
+      months.add(k);
     }
   }
   return months;
@@ -3425,7 +3757,7 @@ function evaluatePersonalEligibility(records, refDate, mergedFullText) {
   for (const r of pitRows) {
     const range = parsePeriodRange(r.period);
     if (!range) continue;
-    for (const k of expandPeriodToMonthKeys(range)) {
+    for (const k of getMonthKeysOverlappingPeriod(range)) {
       if (!monthToTypes.has(k)) monthToTypes.set(k, new Set());
       monthToTypes.get(k).add(r.type || '');
     }
@@ -3666,7 +3998,7 @@ function renderJudgment(result) {
       judgmentKpiNum.textContent = String(result.coveredCount);
       judgmentKpiDenom.textContent = '/12';
       judgmentKpiNote.textContent =
-        '规则摘要：以全表最晚所属期结束月为锚，倒推 12 个自然月内有缴税的月份数（满分 12）。按季特例须连续 4 个自然季度且所属期覆盖整季（如 Q2=4～6 月）；通过时本数可能小于 12，以「通过项」为准。';
+        '规则摘要：以全表最晚所属期结束月为锚，倒推 12 个自然月；每月须与任一条款所属期有日历交集即计有税（单日所属期亦计整月）。按季特例须连续 4 季且所属期覆盖整季（Q2=4～6 月）。';
       judgmentKpiWrap.hidden = false;
     } else {
       judgmentKpiWrap.hidden = true;
