@@ -8,11 +8,82 @@
 <script src="https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.min.js"></script>
 <style>
   * { margin:0; padding:0; box-sizing:border-box; }
-  body { font-family: system-ui, -apple-system, "Noto Sans SC", sans-serif; background:#f8fafc; color:#111827; padding:40px 20px; }
-  .container { max-width:980px; margin:0 auto; }
-  h1 { text-align:center; font-size:26px; font-weight:700; margin-bottom:8px; }
-  .subtitle { text-align:center; color:#64748b; margin-bottom:32px; }
-  .upload-area { background:#fff; border:3px dashed #cbd5e1; border-radius:16px; padding:60px 20px; text-align:center; cursor:pointer; transition:all .2s; max-width:600px; margin:0 auto; position:relative; display:block; }
+  body {
+    font-family: system-ui, -apple-system, "Noto Sans SC", sans-serif;
+    background:#f8fafc;
+    color:#111827;
+    padding: clamp(16px, 2.5vw, 40px) clamp(14px, 2vw, 28px);
+    min-height: 100vh;
+    font-size: 16px;
+  }
+  .container { max-width: min(1080px, 100%); margin:0 auto; }
+  @media (min-width: 1440px) {
+    .container { max-width: 1180px; }
+  }
+  @media (min-width: 1580px) {
+    .container { max-width: min(1320px, 100%); }
+  }
+  h1 { text-align:center; font-size: clamp(22px, 2.2vw, 28px); font-weight:700; margin-bottom:8px; }
+  .app-header { margin-bottom: 8px; }
+  .subtitle { text-align:center; color:#64748b; margin-bottom: 28px; line-height: 1.55; }
+  .main-workspace {
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+  }
+  @media (min-width: 1580px) {
+    .main-workspace {
+      display: grid;
+      grid-template-columns: minmax(320px, 420px) minmax(0, 1fr);
+      gap: 28px 40px;
+      align-items: start;
+    }
+    .workspace-tools .mode-panel,
+    .workspace-tools .upload-area,
+    .workspace-tools .queue-panel,
+    .workspace-tools .pdf-password-panel,
+    .workspace-tools .lib-error {
+      margin-left: 0;
+      margin-right: 0;
+      max-width: 100%;
+    }
+  }
+  .workspace-results {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    min-width: 0;
+  }
+  .result-placeholder {
+    display: block;
+    padding: 28px 20px;
+    text-align: center;
+    font-size: 15px;
+    line-height: 1.65;
+    color: #475569;
+    background: #fff;
+    border: 2px dashed #cbd5e1;
+    border-radius: 14px;
+  }
+  .result-placeholder p { margin: 0; }
+  .result-placeholder-sub {
+    margin-top: 12px !important;
+    font-size: 14px;
+    color: #94a3b8;
+  }
+  .result-placeholder strong { color: #334155; }
+  .layout-wide-hint {
+    display: none;
+    text-align: center;
+    font-size: 13px;
+    color: #64748b;
+    margin: 0 0 4px;
+    line-height: 1.5;
+  }
+  @media (min-width: 1580px) {
+    .layout-wide-hint { display: block; }
+  }
+  .upload-area { background:#fff; border:3px dashed #cbd5e1; border-radius:16px; padding: clamp(36px, 5vw, 56px) clamp(16px, 3vw, 24px); text-align:center; cursor:pointer; transition:all .2s; max-width: min(640px, 100%); margin:0 auto; position:relative; display:block; }
   .upload-area:hover, .upload-area.dragover { border-color:#2563eb; background:#f0f9ff; }
   .upload-icon { font-size:48px; margin-bottom:12px; }
   .upload-text { font-size:18px; font-weight:600; color:#334155; }
@@ -26,7 +97,7 @@
     z-index: -1;
   }
   .lib-error {
-    max-width: 600px;
+    max-width: min(640px, 100%);
     margin: 16px auto 0;
     padding: 14px 18px;
     background: #fef2f2;
@@ -44,7 +115,7 @@
     display: none;
   }
   .queue-panel {
-    max-width: 600px;
+    max-width: min(640px, 100%);
     margin: 20px auto 0;
     background: #fff;
     border-radius: 14px;
@@ -137,11 +208,39 @@
     border: none;
     font-family: inherit;
   }
-  .result-box { margin-top:32px; background:#fff; border-radius:16px; box-shadow:0 4px 6px -1px rgb(0 0 0 / 0.05); padding:28px; display:none; }
+  .result-box {
+    margin-top: 0;
+    background: #fff;
+    border-radius: 16px;
+    box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.05);
+    padding: clamp(20px, 2.5vw, 32px);
+    display: none;
+  }
+  .novice-tip {
+    margin: 0 0 18px;
+    padding: 14px 16px;
+    background: #f0f9ff;
+    border: 1px solid #bae6fd;
+    border-radius: 12px;
+    font-size: 14px;
+    line-height: 1.65;
+    color: #334155;
+  }
+  .novice-tip h4 { font-size: 14px; font-weight: 700; color: #0c4a6e; margin-bottom: 8px; }
+  .novice-tip ol { margin: 0; padding-left: 1.25em; }
+  .novice-tip li { margin: 4px 0; }
+  .table-scroll {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    margin-top: 4px;
+    border-radius: 10px;
+    border: 1px solid #e2e8f0;
+  }
+  .table-scroll table { min-width: 520px; margin: 0; }
   .taxpayer-card { display:grid; grid-template-columns:repeat(auto-fit, minmax(200px, 1fr)); gap:16px; padding:18px 20px; background:#f0f9ff; border-radius:12px; border:1px solid #bae6fd; margin-bottom:24px; }
   .taxpayer-field-label { display:block; font-size:12px; color:#64748b; margin-bottom:4px; font-weight:400; }
-  .taxpayer-item .taxpayer-value { display:block; font-size:15px; font-weight:600; color:#0f172a; word-break:break-all; }
-  table { width:100%; border-collapse:collapse; font-size:15px; }
+  .taxpayer-item .taxpayer-value { display:block; font-size:16px; font-weight:600; color:#0f172a; word-break:break-all; }
+  table { width:100%; border-collapse:collapse; font-size:16px; }
   th, td { padding:14px 12px; text-align:left; border-bottom:1px solid #e2e8f0; }
   th { background:#f8fafc; font-weight:600; color:#475569; }
   .amount { text-align:right; font-family:ui-monospace,monospace; font-weight:600; }
@@ -271,9 +370,72 @@
   }
   .judgment-section.pass .judgment-kpi-note { color: #166534; }
   .judgment-section.fail .judgment-kpi-note { color: #7f1d1d; }
+  .personal-long-image {
+    margin: 16px 0 20px;
+    padding: 16px 18px;
+    background: #f0fdf4;
+    border: 1px solid #86efac;
+    border-radius: 12px;
+    display: none;
+  }
+  .personal-long-image h3 {
+    font-size: 15px;
+    font-weight: 700;
+    color: #166534;
+    margin-bottom: 8px;
+  }
+  .personal-long-image .pli-hint {
+    font-size: 13px;
+    color: #15803d;
+    line-height: 1.55;
+    margin-bottom: 10px;
+  }
+  .personal-long-image .pli-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-bottom: 12px;
+  }
+  .personal-long-image .pli-preview-wrap {
+    max-height: min(70vh, 720px);
+    overflow: auto;
+    border: 1px solid #bbf7d0;
+    border-radius: 8px;
+    background: #fff;
+  }
+  .personal-long-image img {
+    display: block;
+    width: 100%;
+    height: auto;
+  }
+  .personal-long-image.bad {
+    background: #fef2f2;
+    border-color: #fecaca;
+  }
+  .personal-long-image.bad h3 { color: #991b1b; }
+  .personal-long-image.bad .pli-hint { color: #b91c1c; }
   #mainApp { display: none; }
+  .rule-details {
+    margin-top: 12px;
+    padding: 10px 12px;
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 10px;
+    font-size: 12px;
+    color: #475569;
+    line-height: 1.6;
+  }
+  .rule-details summary {
+    cursor: pointer;
+    font-weight: 600;
+    color: #334155;
+    user-select: none;
+  }
+  .rule-details[open] summary { margin-bottom: 8px; }
+  .rule-details p { margin: 8px 0 0; }
+  .rule-details p:first-of-type { margin-top: 0; }
   .mode-panel {
-    max-width: 600px;
+    max-width: min(640px, 100%);
     margin: 0 auto 24px;
     background: #fff;
     border: 1px solid #e2e8f0;
@@ -288,7 +450,7 @@
   .mode-options input { margin-top: 3px; flex-shrink: 0; }
   .mode-hint { font-size: 12px; color: #64748b; margin-top: 10px; line-height: 1.55; }
   .pdf-password-panel {
-    max-width: 600px;
+    max-width: min(640px, 100%);
     margin: 16px auto 0;
     padding: 14px 16px;
     background: #fffbeb;
@@ -304,7 +466,7 @@
     padding: 10px 12px;
     border: 1px solid #fcd34d;
     border-radius: 8px;
-    font-size: 15px;
+    font-size: 16px;
     font-family: inherit;
   }
   .pdf-password-hint { font-size: 12px; color: #92400e; margin-top: 8px; line-height: 1.55; }
@@ -347,7 +509,7 @@
     <h2>使用前须知</h2>
     <div class="disclaimer-text">
       <p><strong>免责声明</strong></p>
-      <p>本工具仅作完税证明整理与购车资格辅助参考，不构成任何行政或法律意见。</p>
+      <p>本工具用于在<strong>电脑浏览器</strong>中整理完税证明（<strong>PDF / ZIP</strong>），并可<strong>辅助参考</strong>购车资格相关条件；仅作完税证明整理与购车资格辅助参考，<strong>结果仅供参考</strong>，不构成任何行政或法律意见。</p>
       <p>PDF 识别存在极小概率差错，连续缴纳、所属时期等判断亦可能因版式差异产生偏差，结果仅供参考。</p>
       <p><strong>本工具不对税务机关电子签章进行验真</strong>，无法判断文件来源是否官方、签章是否有效、PDF 是否在签章后被改动；上述事项须自行通过 Adobe 等阅读器或政务平台核验。</p>
       <p>单位用户购车资格以「一网通办」等平台及税务、人社部门最终核验为准；因使用本工具产生的任何后果，由用户本人自行承担。</p>
@@ -366,35 +528,46 @@
   </div>
 
   <div id="mainApp">
-  <h1>完税证明智能整理</h1>
-  <div class="subtitle">拖入或添加多个 PDF / ZIP，确认齐全后一次整理</div>
+  <header class="app-header">
+    <h1>完税证明智能整理</h1>
+    <div class="subtitle">在电脑浏览器中使用：支持 <strong>PDF</strong> 与 <strong>ZIP</strong>（ZIP 内可含多份 PDF），添加齐全后一次整理</div>
+    <p class="layout-wide-hint" aria-hidden="true">宽屏下为双栏：左侧上传与选项，右侧整理结果（便于对照）。</p>
+  </header>
 
+  <div class="main-workspace">
+    <div class="workspace-tools">
   <label class="privacy-bar" id="privacyBar">
     <input type="checkbox" id="privacyMask" checked>
-    <span>隐私模式：模糊显示纳税人名称、识别号、证明编号及文件名中的敏感信息（取消勾选可查看原文）</span>
+    <span><strong>隐私</strong>：勾选后模糊姓名、税号、证明编号与文件名；取消勾选可看原文。</span>
   </label>
 
   <div class="mode-panel" id="modePanel">
     <h3>审核模式（影响「资格初步判断」）</h3>
+    <p class="mode-hint" style="margin-top:0;margin-bottom:10px;">请按实际材料选择；选错模式结论会不准。</p>
     <div class="mode-options">
       <label for="modeCompany">
         <input type="radio" name="auditMode" id="modeCompany" value="company" checked>
-        <span><strong>单位 / 公司税单</strong>：按原购车社保连续缴纳规则（滚动 12 个月或同税种按季特例等）。</span>
+        <span><strong>单位 / 公司税单</strong>：公司/单位完税证明，按购车资格相关的连续缴纳等规则做初步判断。</span>
       </label>
       <label for="modePersonal">
         <input type="radio" name="auditMode" id="modePersonal" value="personal">
-        <span><strong>个人所得税（上海）</strong>：以<strong>个人所得税</strong>为主；须能识别为上海税务机关出具；在<strong>最晚所属期结束月符合 N-1 / N-2</strong>的前提下，自该月起<strong>倒推连续 48 个自然月</strong>内，须有<strong>不少于 36 个月</strong>在沪个税有效申报月（<strong>零申报计入</strong>；<strong>补缴、负数</strong>不计入）。</span>
+        <span><strong>个人所得税（上海）</strong>：在沪个人所得税记录，按工具内规则做「有效申报月」等初步判断（细则见下方展开）。</span>
       </label>
     </div>
-    <p class="mode-hint">整理结果表：<strong>公司与个人模式</strong>均按「税款所属期」同一自然月<strong>合并首列</strong>（rowspan），其下<strong>每条明细仍各占一行</strong>便于核对。个人模式：「备注」中含补缴或滞纳金的行<strong>不剔除</strong>，<strong>高亮</strong>且<strong>不计入</strong>缴费月份统计。切换模式后若已有整理结果，将自动用当前模式重新计算判断。</p>
-    <p class="mode-hint">选择<strong>个人所得税（上海）</strong>时：每次仅支持 <strong>1 个 PDF</strong>（勿多文件、勿 ZIP 内含多份 PDF）；须填写「PDF 打开密码」；同一 PDF 内<strong>证明编号须一致</strong>。<strong>单位 / 公司税单</strong>模式不显示密码栏、亦不使用密码解密。</p>
+    <details class="rule-details">
+      <summary>详细规则（选读）</summary>
+      <p><strong>单位 / 公司税单</strong>：按原购车社保连续缴纳相关规则（如滚动 12 个月或同税种按季特例等）做初步判断。</p>
+      <p><strong>个人所得税（上海）</strong>：以个人所得税为主，须能识别为上海税务机关出具；在「最晚所属期结束月」符合 N-1 / N-2 的前提下，自该月起倒推连续 48 个自然月内，须有不少于 36 个月在沪个税有效申报月（零申报计入；补缴、负数不计入）。</p>
+      <p><strong>整理结果表</strong>：两种模式均按「税款所属期」同一自然月合并左侧月份列，其下每条税种明细各占一行。个人模式下，备注中含补缴或滞纳金的行会高亮保留，但不计入有效缴费月统计。切换模式后若已有整理结果，会自动按当前模式重算判断。</p>
+      <p><strong>上传限制</strong>：个人所得税（上海）每次仅 1 个 PDF（勿多文件、勿用内含多份 PDF 的 ZIP）；须填 PDF 打开密码；同一 PDF 内证明编号须一致。单位 / 公司税单模式不显示密码栏、不使用密码解密。</p>
+    </details>
   </div>
 
   <div class="upload-area" id="dropZone">
     <div class="upload-icon">📄</div>
-    <div class="upload-text">拖拽文件到此处</div>
-    <div class="upload-hint">支持一次拖入多个 PDF，也可多次添加后再点「开始整理」</div>
-    <button type="button" class="pick-link" id="btnPickFiles">或点击选择文件（可多选）</button>
+    <div class="upload-text">拖拽 <strong>PDF</strong> 或 <strong>ZIP</strong> 到此处</div>
+    <div class="upload-hint">与上方说明一致：支持电子版 <strong>PDF</strong> 与 <strong>ZIP</strong>（ZIP 里可放多份 PDF）。可多选、可多次添加，最后点「开始整理」。</div>
+    <button type="button" class="pick-link" id="btnPickFiles">或点击选择 PDF / ZIP（可多选）</button>
     <input type="file" id="fileInput" accept=".zip,.pdf,application/zip,application/pdf" multiple>
   </div>
 
@@ -418,6 +591,13 @@
 
   <div class="lib-error" id="libError"></div>
   <div class="processing-hint" id="processingHint">正在解析，请稍候…</div>
+    </div>
+
+    <div class="workspace-results">
+      <div class="result-placeholder" id="resultPlaceholder" aria-live="polite">
+        <p><strong>整理结果</strong>将出现在这里：资格判断（若已开启）、纳税人信息、明细表与剔除说明。</p>
+        <p class="result-placeholder-sub">请先于左侧添加 PDF 或 ZIP，再点「开始整理」。</p>
+      </div>
 
   <div class="result-box" id="resultBox">
     <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px; flex-wrap:wrap; gap:8px;">
@@ -436,6 +616,17 @@
       </div>
       <div class="judgment-detail" id="judgmentDetail"></div>
       <div class="judgment-meta" id="judgmentMeta"></div>
+    </div>
+
+    <div class="personal-long-image" id="personalLongImageSection" aria-live="polite">
+      <h3 id="personalLongImageTitle">个人所得税 · 纳税记录长图</h3>
+      <p class="pli-hint" id="personalLongImageHint">—</p>
+      <div class="pli-actions">
+        <button type="button" class="btn btn-primary" id="btnDownloadLongImage" style="display:none;">下载长图 PNG</button>
+      </div>
+      <div class="pli-preview-wrap" id="personalLongImageWrap" style="display:none;">
+        <img id="personalLongImagePreview" alt="按页码顺序拼接的纳税记录长图" />
+      </div>
     </div>
 
     <div class="taxpayer-card" id="taxpayerCard">
@@ -460,6 +651,17 @@
 
     <div class="error-box" id="errorBox"></div>
 
+    <div class="novice-tip" id="noviceResultTip" aria-label="整理结果阅读说明">
+      <h4>新手怎样看下方这张表</h4>
+      <ol>
+        <li>若开启了「资格判断」，先看上面的<strong>绿 / 黄 / 红</strong>结论与说明。</li>
+        <li>表格<strong>最左列是月份</strong>：同一月份可能合并一格，下面每一行是一笔<strong>税种 + 金额</strong>。</li>
+        <li>选「个人所得税（上海）」时，<strong>浅黄高亮</strong>行多为补缴/滞纳金，会保留在表里，但<strong>不计入</strong>有效申报月数。</li>
+        <li>改选上面的「审核模式」后，同一批文件会<strong>自动重算</strong>，无需重新上传。</li>
+      </ol>
+    </div>
+
+    <div class="table-scroll">
     <table id="resultTable">
       <thead>
         <tr>
@@ -470,10 +672,13 @@
       </thead>
       <tbody id="resultBody"></tbody>
     </table>
+    </div>
 
     <div class="removed-section" id="removedSection" style="display:none;">
       <div class="removed-title">已剔除（负数 / 滞纳金 / 罚没收入等）</div>
       <div id="removedList"></div>
+    </div>
+  </div>
     </div>
   </div>
   </div>
@@ -508,7 +713,17 @@ let lastErrorRaw = '';
 let auditMode = 'company';
 /** 上次整理结果，用于切换模式时重算判断 */
 let judgmentSnapshot = null;
+let personalLongImageSection;
+let personalLongImageHint;
+let personalLongImageTitle;
+let personalLongImagePreview;
+let personalLongImageWrap;
+let btnDownloadLongImage;
+let lastPersonalLongImageBlob = null;
+let lastPersonalLongImageObjectUrl = null;
+let lastPersonalLongImageFilename = '';
 const MAX_PDFS = 50;
+const MAX_STITCH_CANVAS_HEIGHT = 28000;
 
 const PERIOD_RE =
   /(\d{4})\s*[-/年.]\s*(\d{1,2})\s*[-/月.]?\s*(\d{1,2})?\s*(?:至|—|–|~|-)\s*(\d{4})\s*[-/年.]\s*(\d{1,2})\s*[-/月.]?\s*(\d{1,2})?/;
@@ -560,6 +775,7 @@ function initDisclaimerGate() {
     judgmentEnabled = withJudgment;
     gate.style.display = 'none';
     mainApp.style.display = 'block';
+    syncResultPlaceholderVisibility();
   }
 
   const disclaimerError = document.getElementById('disclaimerError');
@@ -579,6 +795,12 @@ function initDisclaimerGate() {
   btnSkip.addEventListener('click', () => {
     enterApp(false);
   });
+}
+
+function syncResultPlaceholderVisibility() {
+  const ph = document.getElementById('resultPlaceholder');
+  if (!ph || !resultBox) return;
+  ph.hidden = window.getComputedStyle(resultBox).display !== 'none';
 }
 
 function initApp() {
@@ -620,6 +842,22 @@ function initApp() {
   pdfPasswordEl = document.getElementById('pdfPassword');
   completenessSection = document.getElementById('completenessSection');
   completenessBody = document.getElementById('completenessBody');
+  personalLongImageSection = document.getElementById('personalLongImageSection');
+  personalLongImageHint = document.getElementById('personalLongImageHint');
+  personalLongImageTitle = document.getElementById('personalLongImageTitle');
+  personalLongImagePreview = document.getElementById('personalLongImagePreview');
+  personalLongImageWrap = document.getElementById('personalLongImageWrap');
+  btnDownloadLongImage = document.getElementById('btnDownloadLongImage');
+  if (btnDownloadLongImage) {
+    btnDownloadLongImage.addEventListener('click', () => {
+      if (lastPersonalLongImageBlob && lastPersonalLongImageFilename) {
+        downloadBlobAsFile(
+          lastPersonalLongImageBlob,
+          lastPersonalLongImageFilename
+        );
+      }
+    });
+  }
   privacyMaskEl = document.getElementById('privacyMask');
   if (privacyMaskEl) {
     privacyMaskEnabled = privacyMaskEl.checked;
@@ -671,6 +909,7 @@ function initApp() {
   });
 
   initDisclaimerGate();
+  syncResultPlaceholderVisibility();
 }
 
 window.addEventListener('load', initApp);
@@ -738,6 +977,7 @@ function addFilesToQueue(fileList) {
 
   if (added.length) {
     resultBox.style.display = 'none';
+    syncResultPlaceholderVisibility();
     renderQueue();
   }
 }
@@ -768,6 +1008,7 @@ function clearQueue() {
   pendingFiles = [];
   renderQueue();
   resultBox.style.display = 'none';
+  syncResultPlaceholderVisibility();
   if (libErrorEl) libErrorEl.style.display = 'none';
 }
 
@@ -836,6 +1077,180 @@ function clearResults() {
   taxpayerIdEl.textContent = '—';
   sourceFilesEl.textContent = '—';
   summary.textContent = '正在解析 PDF…';
+  clearPersonalLongImageUi();
+  syncResultPlaceholderVisibility();
+}
+
+function revokePersonalLongImageUrl() {
+  if (lastPersonalLongImageObjectUrl) {
+    URL.revokeObjectURL(lastPersonalLongImageObjectUrl);
+    lastPersonalLongImageObjectUrl = null;
+  }
+}
+
+function clearPersonalLongImageUi() {
+  revokePersonalLongImageUrl();
+  lastPersonalLongImageBlob = null;
+  lastPersonalLongImageFilename = '';
+  if (personalLongImageSection) {
+    personalLongImageSection.style.display = 'none';
+    personalLongImageSection.classList.remove('bad');
+  }
+  if (personalLongImageHint) personalLongImageHint.textContent = '—';
+  if (personalLongImageTitle) {
+    personalLongImageTitle.textContent = '个人所得税 · 纳税记录长图';
+  }
+  if (personalLongImagePreview) personalLongImagePreview.removeAttribute('src');
+  if (personalLongImageWrap) personalLongImageWrap.style.display = 'none';
+  if (btnDownloadLongImage) btnDownloadLongImage.style.display = 'none';
+}
+
+function downloadBlobAsFile(blob, filename) {
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = filename;
+  a.rel = 'noopener';
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 60000);
+}
+
+/** 个人所得税：将 PDF 各页渲染为图并按页码纵向拼接 */
+async function renderPdfToStitchedLongImage(arrayBuffer, password, scale) {
+  ensurePdfJs();
+  const pwd = password != null ? password : getPdfOpenPasswordForCurrentMode();
+  const docInit = { data: arrayBuffer.slice(0) };
+  if (pwd) docInit.password = pwd;
+  const pdf = await pdfjsLib.getDocument(docInit).promise;
+  const pageCanvases = [];
+  let totalHeight = 0;
+  let maxWidth = 0;
+
+  for (let p = 1; p <= pdf.numPages; p++) {
+    const page = await pdf.getPage(p);
+    const viewport = page.getViewport({ scale });
+    const canvas = document.createElement('canvas');
+    const w = Math.ceil(viewport.width);
+    const h = Math.ceil(viewport.height);
+    canvas.width = w;
+    canvas.height = h;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) throw new Error('浏览器无法创建画布');
+    ctx.fillStyle = '#ffffff';
+    ctx.fillRect(0, 0, w, h);
+    await page.render({ canvasContext: ctx, viewport }).promise;
+    pageCanvases.push(canvas);
+    totalHeight += h;
+    maxWidth = Math.max(maxWidth, w);
+  }
+
+  if (totalHeight > MAX_STITCH_CANVAS_HEIGHT) {
+    throw new Error(
+      `拼接后高度约 ${totalHeight}px，超出浏览器上限（${MAX_STITCH_CANVAS_HEIGHT}px）`
+    );
+  }
+
+  const stitched = document.createElement('canvas');
+  stitched.width = maxWidth;
+  stitched.height = totalHeight;
+  const sctx = stitched.getContext('2d');
+  sctx.fillStyle = '#ffffff';
+  sctx.fillRect(0, 0, maxWidth, totalHeight);
+  let y = 0;
+  for (const c of pageCanvases) {
+    sctx.drawImage(c, 0, y);
+    y += c.height;
+  }
+
+  const blob = await new Promise((resolve, reject) => {
+    stitched.toBlob(
+      (b) => (b ? resolve(b) : reject(new Error('PNG 导出失败'))),
+      'image/png',
+      0.92
+    );
+  });
+  return { blob, width: maxWidth, height: totalHeight, pageCount: pdf.numPages, scale };
+}
+
+async function buildPersonalLongImageFromPdf(pdfItem) {
+  if (!pdfItem || !pdfItem.data) throw new Error('未找到 PDF 数据');
+  const scales = [2, 1.5, 1.25, 1];
+  let lastErr = null;
+  for (const scale of scales) {
+    try {
+      return await renderPdfToStitchedLongImage(
+        pdfItem.data,
+        getPdfOpenPasswordForCurrentMode(),
+        scale
+      );
+    } catch (e) {
+      lastErr = e;
+      if (!/超出浏览器上限|PNG/.test(String(e.message || e))) throw e;
+    }
+  }
+  throw lastErr || new Error('生成长图失败');
+}
+
+function showPersonalLongImageResult(pdfName, stitchResult) {
+  if (!personalLongImageSection) return;
+  revokePersonalLongImageUrl();
+  lastPersonalLongImageBlob = stitchResult.blob;
+  const base = String(pdfName || '纳税记录').replace(/\.pdf$/i, '');
+  lastPersonalLongImageFilename = `${base}_长图.png`;
+  lastPersonalLongImageObjectUrl = URL.createObjectURL(stitchResult.blob);
+
+  personalLongImageSection.classList.remove('bad');
+  personalLongImageSection.style.display = 'block';
+  if (personalLongImageTitle) {
+    personalLongImageTitle.textContent = '个人所得税 · 纳税记录长图（审核通过）';
+  }
+  if (personalLongImageHint) {
+    personalLongImageHint.textContent =
+      `已按 PDF 第 1～${stitchResult.pageCount} 页顺序拼接（${stitchResult.width}×${stitchResult.height}px，缩放 ${stitchResult.scale}×），并已自动下载 PNG。`;
+  }
+  if (personalLongImagePreview) {
+    personalLongImagePreview.src = lastPersonalLongImageObjectUrl;
+  }
+  if (personalLongImageWrap) personalLongImageWrap.style.display = 'block';
+  if (btnDownloadLongImage) btnDownloadLongImage.style.display = 'inline-block';
+
+  downloadBlobAsFile(lastPersonalLongImageBlob, lastPersonalLongImageFilename);
+}
+
+function showPersonalLongImageError(message) {
+  if (!personalLongImageSection) return;
+  personalLongImageSection.classList.add('bad');
+  personalLongImageSection.style.display = 'block';
+  if (personalLongImageTitle) {
+    personalLongImageTitle.textContent = '个人所得税 · 长图生成失败';
+  }
+  if (personalLongImageHint) personalLongImageHint.textContent = message;
+  if (personalLongImageWrap) personalLongImageWrap.style.display = 'none';
+  if (btnDownloadLongImage) btnDownloadLongImage.style.display = 'none';
+}
+
+async function autoGeneratePersonalLongImageOnPass(pdfItem) {
+  if (!pdfItem) return;
+  const prevHint = processingHintEl ? processingHintEl.textContent : '';
+  if (processingHintEl) {
+    processingHintEl.textContent = '审核通过，正在将 PDF 按页码拼接为长图…';
+    processingHintEl.style.display = 'block';
+  }
+  try {
+    const stitch = await buildPersonalLongImageFromPdf(pdfItem);
+    showPersonalLongImageResult(pdfItem.name, stitch);
+  } catch (e) {
+    showPersonalLongImageError(
+      `长图生成失败：${e && e.message ? e.message : String(e)}`
+    );
+  } finally {
+    if (processingHintEl) {
+      processingHintEl.style.display = 'none';
+      processingHintEl.textContent = prevHint || '正在解析，请稍候…';
+    }
+  }
 }
 
 function isPenaltyTaxType(type) {
@@ -1409,14 +1824,14 @@ function resolvePeriodFromDatesOnLine(line) {
   const dates = [...stripped.matchAll(/\d{4}-\d{2}-\d{2}/g)].map((m) => m[0]);
   if (dates.length === 0) return null;
   if (dates.length === 1) return `${dates[0]} 至 ${dates[0]}`;
-  if (dates.length === 2) return `${dates[0]} 至 ${dates[0]}`;
+  /** 2 个日期：整段为所属期起止。≥3 个时常见顺序为「所属期起、所属期止、入库日」——前两日构成所属期，勿把「止」与「入库」误缩成单日。 */
   const d0 = dates[0];
   const d1 = dates[1];
   const daySpan =
     (new Date(d1.replace(/-/g, '/')) - new Date(d0.replace(/-/g, '/'))) /
     86400000;
-  if (daySpan >= 0 && daySpan <= 120) return `${d0} 至 ${d1}`;
-  return `${d0} 至 ${d0}`;
+  if (daySpan >= 0) return `${d0} 至 ${d1}`;
+  return `${d1} 至 ${d0}`;
 }
 
 function extractTaxTypeFromKnownKeywords(line) {
@@ -2996,6 +3411,9 @@ async function processFiles(files) {
     sourceFilesEl.textContent = pdfList.map((p) => maskFileName(p.name)).join('、');
     sourceFilesEl.classList.toggle('pii-masked', privacyMaskEnabled);
 
+    const personalPdfSource =
+      auditMode === 'personal' && pdfList.length === 1 ? pdfList[0] : null;
+
     const allRecords = [];
     let taxpayer = { name: '', id: '' };
     const warnings = [];
@@ -3241,6 +3659,13 @@ async function processFiles(files) {
             )
           : evaluateEligibility(validRecords, refDate);
       renderJudgment(lastJudgmentResult);
+      if (
+        auditMode === 'personal' &&
+        lastJudgmentResult.verdict === 'pass' &&
+        personalPdfSource
+      ) {
+        await autoGeneratePersonalLongImageOnPass(personalPdfSource);
+      }
     }
   } catch (err) {
     summary.textContent = '处理失败';
