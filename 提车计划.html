@@ -1,0 +1,1113 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+  <title>您的特斯拉提车计划</title>
+  <style>
+    /* 样式部分 */
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Helvetica Neue', Arial, sans-serif;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    body {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: #333;
+      line-height: 1.6;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      height: 100vh;
+      overflow: hidden;
+    }
+
+    .ratio-container {
+      width: 740px; 
+      height: 1137px; 
+      overflow: hidden;
+      border-radius: 16px;
+      box-shadow: 0 30px 60px rgba(0, 0, 0, 0.4);
+      max-width: 100vw;
+      max-height: 100vh;
+      position: relative;
+      flex-shrink: 0;
+      background-color: #fff;
+    }
+
+    .container {
+      width: 100%;
+      height: 100%;
+      background-color: #fff;
+      display: flex;
+      flex-direction: column;
+      position: relative;
+    }
+
+    .container::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 4px;
+      background: linear-gradient(90deg, #e63946 0%, #c8102e 50%, #e63946 100%);
+      z-index: 10;
+    }
+
+    .header {
+      position: relative;
+      height: 200px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 30px 20px;
+      flex-shrink: 0;
+      overflow: hidden;
+    }
+
+    .header-bg {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 200px;
+      background-image: url('https://digitalassets.tesla.com/tesla-contents/image/upload/f_auto,q_auto:best/v1683323426/11_0x0-Cyber_Rodeo_09?pgw=1');
+      background-size: cover;
+      background-position: center center;
+      background-repeat: no-repeat;
+      z-index: 0;
+    }
+
+    .header::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(135deg, rgba(0, 0, 0, 0.3) 0%, rgba(230, 57, 70, 0.2) 100%);
+      z-index: 1;
+    }
+
+    .header::after {
+      content: '';
+      position: absolute;
+      top: -50%;
+      right: -20%;
+      width: 300px;
+      height: 300px;
+      background: radial-gradient(circle, rgba(255, 255, 255, 0.12) 0%, transparent 70%);
+      border-radius: 50%;
+      z-index: 1;
+    }
+
+    .header-content {
+      position: relative;
+      z-index: 2;
+      width: 100%;
+    }
+
+    .header h1 {
+      font-size: 32px;
+      font-weight: 400;
+      letter-spacing: 3px;
+      margin-bottom: 8px;
+      text-shadow: 0 4px 16px rgba(0, 0, 0, 0.6);
+      color: #ffffff !important;
+      position: relative;
+      display: inline-block;
+    }
+
+    .header h1::after {
+      content: '';
+      position: absolute;
+      bottom: -8px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 60px;
+      height: 2px;
+      background: linear-gradient(90deg, transparent, #ffffff, transparent);
+    }
+
+    .header p {
+      font-size: 13px;
+      font-weight: 300;
+      letter-spacing: 1px;
+      text-shadow: 0 2px 8px rgba(0, 0, 0, 0.5);
+      color: rgba(255, 255, 255, 0.95) !important;
+      margin-bottom: 12px;
+    }
+
+    .welcome-text {
+      font-size: 12px;
+      margin-bottom: 0;
+      font-weight: 400;
+      letter-spacing: 0.5px;
+      line-height: 1.6;
+      text-shadow: 0 2px 10px rgba(0, 0, 0, 0.6);
+      color: rgba(255, 255, 255, 0.95) !important;
+    }
+
+    .timeline {
+      position: relative;
+      padding: 30px 30px 20px;
+      background: linear-gradient(to bottom, #ffffff 0%, #f8f9fa 100%);
+      flex: 1;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .timeline::before {
+      content: '';
+      position: absolute;
+      left: 27px;
+      top: 0;
+      bottom: 0;
+      width: 2px;
+      background: #e2e8f0;
+    }
+
+    .timeline-item {
+      position: relative;
+      margin-bottom: 20px;
+      padding-left: 55px;
+      transition: all 0.3s ease;
+    }
+
+    .custom-checkbox {
+      position: absolute;
+      left: 13px;
+      top: 22px;
+      width: 30px;
+      height: 30px;
+      border: 2px solid #cbd5e0;
+      border-radius: 50%;
+      cursor: pointer;
+      transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+      background: #fff;
+      z-index: 2;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+    }
+
+    .custom-checkbox:hover {
+      border-color: #ff3b3b;
+      transform: scale(1.1);
+    }
+
+    .custom-checkbox.checked {
+      border-color: transparent;
+      background: linear-gradient(135deg, #ff5252 0%, #b91c1c 100%);
+      box-shadow: 0 4px 15px rgba(220, 38, 38, 0.4);
+      transform: scale(1.1);
+    }
+
+    .custom-checkbox .checkmark {
+      display: none;
+      width: 16px;
+      height: 16px;
+      filter: drop-shadow(0 1px 2px rgba(0,0,0,0.2));
+    }
+
+    .custom-checkbox.checked .checkmark {
+      display: block;
+      stroke: #ffffff;
+      stroke-width: 3;
+    }
+
+    .timeline-item input[type="checkbox"] {
+      display: none;
+    }
+
+    .content {
+      background: #fff !important;
+      border: 1px solid #f0f0f0 !important;
+      border-left: 4px solid transparent !important;
+      padding: 20px 24px;
+      border-radius: 12px;
+      transition: all 0.4s cubic-bezier(0.25, 0.8, 0.25, 1);
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.03);
+    }
+
+    .timeline-item .custom-checkbox.checked ~ .content {
+      background: linear-gradient(120deg, #fff5f5 0%, #ffe0e0 100%) !important;
+      border-left-color: #d90429 !important;
+      border-color: rgba(217, 4, 41, 0.1) !important;
+      box-shadow: 0 10px 25px rgba(217, 4, 41, 0.12);
+      transform: translateX(6px) translateY(-2px);
+    }
+
+    .timeline-item .dot { display: none; }
+
+    .title {
+      font-size: 17px;
+      font-weight: 600;
+      margin-bottom: 12px;
+      display: flex;
+      align-items: center;
+      flex-wrap: wrap;
+      color: #1a202c !important;
+      letter-spacing: -0.3px;
+    }
+
+    .title span {
+      margin-left: 10px;
+      font-size: 11px;
+      font-weight: 600;
+      background: #f1f5f9 !important;
+      padding: 4px 10px;
+      border-radius: 6px;
+      color: #64748b !important;
+      white-space: nowrap;
+      letter-spacing: 0.5px;
+    }
+    
+    .timeline-item .custom-checkbox.checked ~ .content .title {
+      color: #d90429 !important;
+    }
+
+    .timeline-item .custom-checkbox.checked ~ .content .title span {
+      background: rgba(255, 255, 255, 0.6) !important;
+      color: #d90429 !important;
+    }
+
+    .step2-edit-box {
+      border: none !important;
+      outline: none !important;
+      background: transparent !important;
+      padding: 3px 8px !important;
+      margin: 0 0 0 10px !important;
+      font: inherit !important;
+      font-size: 15px !important;
+      color: #4a5568 !important;
+      /* 修改：宽度增加到 300px，并允许 flex 伸缩 */
+      min-width: 300px !important;
+      flex: 1;
+      border-bottom: 1px dashed #cbd5e0 !important;
+      transition: all 0.3s ease;
+    }
+
+    .step2-edit-box:focus {
+      border-bottom-color: #e63946 !important;
+    }
+
+    .step2-edit-box::placeholder {
+      color: #a0aec0 !important;
+      font-size: 13px !important;
+    }
+
+    .step2-edit-box.empty {
+      background: #fff9c4 !important;
+      border-radius: 4px !important;
+      border-bottom: 1px solid #f57c00 !important;
+      padding: 4px 8px !important;
+      color: #f57c00 !important;
+    }
+
+    .step2-edit-box.empty::placeholder {
+      color: #f57c00 !important;
+      font-weight: 500;
+      opacity: 0.8;
+    }
+
+    .editable-note {
+      margin: 8px 0;
+      padding: 10px 12px;
+      border: 1px solid #e2e8f0;
+      border-radius: 8px;
+      min-height: 40px;
+      outline: none;
+      width: 100%;
+      font-size: 13px;
+      background-color: #f8fafc !important;
+      transition: all 0.2s ease;
+      font-family: inherit;
+      color: #334155 !important;
+    }
+
+    .editable-note:focus {
+      border-color: #e63946;
+      background-color: #fff !important;
+    }
+
+    .editable-note:empty:before {
+      content: attr(data-placeholder);
+      color: #94a3b8;
+    }
+
+    .editable-note.empty {
+      background: #fff9c4 !important;
+      border: 1px solid #f57c00 !important;
+      color: #f57c00 !important;
+    }
+
+    .editable-note.empty:empty:before {
+      color: #f57c00 !important;
+      font-weight: 500;
+      opacity: 0.8;
+    }
+
+    .desc {
+      font-size: 13px;
+      line-height: 1.8;
+      color: #4a5568 !important;
+    }
+
+    .desc ul {
+      margin-top: 8px;
+      padding-left: 0;
+      list-style: none;
+    }
+
+    .desc li {
+      margin-bottom: 8px;
+      line-height: 1.6;
+      color: #4a5568 !important;
+      padding-left: 18px;
+      position: relative;
+    }
+
+    .desc li::before {
+      content: '';
+      position: absolute;
+      left: 0;
+      top: 8px;
+      width: 5px;
+      height: 5px;
+      background: #e63946;
+      border-radius: 50%;
+    }
+
+    .desc li span.recommend {
+      font-weight: 600;
+      background: #fff1f2 !important;
+      padding: 2px 8px;
+      border-radius: 4px;
+      font-size: 11px;
+      color: #e63946 !important;
+      border: 1px solid rgba(230, 57, 70, 0.1);
+    }
+
+    .status-options {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 14px;
+      flex-wrap: wrap;
+    }
+
+    .status-option {
+      padding: 6px 16px;
+      border: 1px solid #e2e8f0;
+      border-radius: 20px;
+      cursor: pointer;
+      font-size: 12px;
+      font-weight: 500;
+      transition: all 0.2s;
+      background: #fff !important;
+      display: inline-block;
+      color: #64748b !important;
+      box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+      white-space: nowrap;
+      flex-shrink: 0;
+    }
+
+    .status-option:hover {
+      border-color: #e63946;
+      color: #e63946 !important;
+      transform: translateY(-1px);
+    }
+
+    .status-option.active {
+      background: linear-gradient(135deg, #e63946 0%, #c8102e 100%) !important;
+      color: white !important;
+      border-color: transparent !important;
+      box-shadow: 0 4px 12px rgba(230, 57, 70, 0.25);
+      transform: translateY(-1px);
+    }
+
+    .status-content {
+      display: none;
+      padding-top: 5px;
+    }
+
+    .status-content.active {
+      display: block;
+      animation: fadeInUp 0.4s ease;
+    }
+
+    @keyframes fadeInUp {
+      from { opacity: 0; transform: translateY(5px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .save-btn-container {
+      padding: 20px 30px;
+      background: #fff;
+      text-align: center;
+      flex-shrink: 0;
+      border-top: 1px solid #f1f5f9;
+    }
+
+    .save-image-btn {
+      background: linear-gradient(135deg, #e63946 0%, #c8102e 100%);
+      color: white;
+      border: none;
+      padding: 14px 40px;
+      border-radius: 30px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      box-shadow: 0 8px 20px rgba(230, 57, 70, 0.25);
+      letter-spacing: 1px;
+      width: 100%;
+    }
+
+    .save-image-btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 12px 25px rgba(230, 57, 70, 0.35);
+    }
+
+    footer {
+      background: linear-gradient(135deg, #1a202c 0%, #2d3748 100%) !important;
+      text-align: center;
+      font-size: 12px;
+      padding: 20px 25px;
+      flex-shrink: 0;
+      position: relative;
+    }
+
+    footer::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 60px;
+      height: 2px;
+      background: linear-gradient(90deg, transparent, #e63946, transparent);
+    }
+
+    footer .tip {
+      display: block;
+      margin-bottom: 6px;
+      color: #cbd5e0 !important;
+      font-weight: 300;
+      letter-spacing: 0.5px;
+    }
+
+    footer .contact {
+      margin-top: 6px;
+      font-weight: 400;
+      color: #f7fafc !important;
+      letter-spacing: 0.5px;
+    }
+
+    .export-mode .custom-checkbox.checked {
+       background-color: #b91c1c !important;
+       border-color: #b91c1c !important;
+    }
+    
+    .export-mode .timeline-item .custom-checkbox.checked ~ .content {
+      background-color: #fff0f0 !important;
+      border-left-color: #d90429 !important;
+    }
+
+    .export-mode .editable-note {
+      border: none !important;
+      background: transparent !important;
+      padding: 0 !important;
+      min-height: auto !important;
+      box-shadow: none !important;
+      font-size: 14px !important;
+      font-weight: 500 !important;
+      color: #2d3748 !important;
+      margin: 4px 0 !important;
+    }
+
+    .export-mode .step2-edit-box {
+      border: none !important;
+      background: transparent !important;
+      padding: 0 !important;
+      /* 修改：导出模式同样加宽 */
+      font-size: 15px !important;
+      font-weight: 600 !important;
+      color: #1a202c !important;
+      min-width: auto !important;
+    }
+
+    .export-mode .title span {
+      font-size: 13px !important;
+      padding: 4px 12px !important;
+      font-weight: 600 !important;
+    }
+
+    @media (max-width: 740px) {
+      body {
+        padding: 0 !important;
+        margin: 0 !important;
+        height: 100vh !important;
+        overflow: hidden !important;
+      }
+      
+      .ratio-container {
+        width: 100vw !important;
+        height: 100vh !important;
+        border-radius: 0 !important;
+        box-shadow: none !important;
+        margin: 0 !important;
+        flex: 0 0 100vh;
+      }
+      
+      .container {
+        width: 100% !important;
+        height: 100vh !important;
+        min-height: 100vh !important;
+      }
+      
+      .header {
+        height: calc(200px * (100vh / 1137px)) !important;
+        padding: 25px 15px;
+        min-height: 180px !important;
+        padding-top: calc(25px + env(safe-area-inset-top)) !important;
+      }
+      
+      .welcome-text { font-size: 11px; }
+      .header h1 { font-size: 26px; }
+      .header p { font-size: 12px; }
+      
+      .timeline {
+        padding: 20px 15px 12px;
+        flex: 1 !important;
+        min-height: 0;
+        height: auto !important;
+      }
+      
+      .timeline-item {
+        padding-left: 45px;
+        margin-bottom: 14px;
+      }
+      
+      .custom-checkbox {
+        width: 28px;
+        height: 28px;
+        left: 11px;
+        top: 22px;
+      }
+      
+      .custom-checkbox .checkmark { width: 14px; height: 14px; }
+      .timeline::before { left: 25px; }
+      .content { padding: 15px 16px; }
+      .title { font-size: 16px; }
+      .title span { font-size: 10px; padding: 3px 8px; }
+      /* 移动端也稍微加宽 */
+      .step2-edit-box { font-size: 12px !important; min-width: 180px !important; }
+      .step2-edit-box.empty { font-size: 12px !important; min-width: 180px !important; }
+      .desc { font-size: 12px; }
+      .desc li { margin-bottom: 5px; padding-left: 18px; }
+      .desc li::before { width: 4px; height: 4px; top: 6px; }
+      .status-option { font-size: 11px; padding: 5px 12px; }
+      .save-image-btn { width: 100%; padding: 12px 0; font-size: 13px; }
+      
+      footer {
+        font-size: 11px;
+        padding: 16px 15px;
+        flex-shrink: 0;
+        padding-bottom: calc(16px + env(safe-area-inset-bottom)) !important;
+      }
+    }
+
+    @media (max-width: 375px) {
+      .header { height: 170px; }
+      .welcome-text { font-size: 10px; }
+      .header h1 { font-size: 24px; }
+      .title { font-size: 15px; }
+      .desc { font-size: 11px; }
+    }
+
+    @media (orientation: landscape) and (max-height: 500px) {
+      body:not(.da-embedded) {
+        transform: rotate(90deg) scale(1);
+        transform-origin: center;
+      }
+    }
+
+    html.da-embedded,
+    html.da-embedded body,
+    body.da-embedded {
+      background: #eef1f6;
+      min-height: 100%;
+      height: auto;
+      overflow-x: hidden;
+      overflow-y: auto;
+      display: block;
+      padding: 20px 12px 40px;
+    }
+    body.da-embedded .ratio-container {
+      margin: 0 auto;
+      max-height: none;
+      height: auto;
+    }
+  </style>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/dom-to-image/2.6.0/dom-to-image.min.js"></script>
+</head>
+<body>
+  <script>
+    if (new URLSearchParams(location.search).get('embedded') === '1') {
+      document.documentElement.classList.add('da-embedded');
+      document.body.classList.add('da-embedded');
+    }
+  </script>
+  <div class="ratio-container" id="ratio-container">
+    <div class="container">
+      <div class="header">
+        <div class="header-bg"></div>
+        <div class="header-content">
+          <h1>专属提车计划</h1>
+          <p class="welcome-text">感谢您选择 TESLA · 与我们一起"建设一个富足非凡的世界"</p>
+        </div>
+      </div>
+
+      <div class="timeline" id="capture-area">
+        <div class="timeline-item">
+          <input type="checkbox" id="step1" class="real-checkbox" />
+          <div class="custom-checkbox" data-step="1">
+            <svg class="checkmark" viewBox="0 0 24 24" fill="none" stroke="#ffffff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+              <polyline points="20 6 9 17 4 12"></polyline>
+            </svg>
+          </div>
+          <div class="dot"></div>
+          <div class="content">
+            <div class="title">
+              01 · 资质审核 <span id="step1-status">请选择状态</span>
+            </div>
+            <div class="desc">
+              <div class="status-options" id="statusGroup">
+                <div class="status-option" data-status="approved">资质已通过</div>
+                <div class="status-option" data-status="pending">审核进行中</div>
+                <div class="status-option" data-status="wait">待提交</div>
+              </div>
+              
+              <div class="status-content" id="content-approved">
+                <ul>
+                  <li>恭喜您的购车资质已审核通过</li>
+                  <li>请耐心等待车辆排产通知</li>
+                </ul>
+              </div>
+              
+              <div class="status-content" id="content-pending">
+                <ul>
+                  <li>预计审核时长：1-2个工作日</li>
+                  <li>如有问题请联系专属顾问</li>
+                </ul>
+              </div>
+              
+              <div class="status-content" id="content-wait">
+                <ul>
+                  <li id="key-note-li">关键备注：
+                    <div class="editable-note" contenteditable="true" data-placeholder="✏️ 请填写特殊项，如旧车过户/社保审核等" id="step1-editable-note"></div>
+                  </li>
+                  <li>提交方式：上牌人通过"随申办"APP或支付宝小程序提交</li>
+                  <li>审核时效：提交后1-2个工作日内完成</li>
+                </ul>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="timeline-item">
+          <input type="checkbox" id="step2" class="real-checkbox" />
+          <div class="custom-checkbox" data-step="2">
+            <svg class="checkmark" viewBox="0 0 24 24" fill="none" stroke="#ffffff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+              <polyline points="20 6 9 17 4 12"></polyline>
+            </svg>
+          </div>
+          <div class="dot"></div>
+          <div class="content">
+            <div class="title">
+              02 · 车辆排产 
+              <span id="step2-status">待办</span>
+              <!-- 已调整宽度 -->
+              <input type="text" id="step2-edit-input" class="step2-edit-box" placeholder="备注 / 预计提车时间" />
+            </div>
+            <div class="desc">
+              <ul>
+                <li>登录特斯拉APP完善个人信息及确认交付中心</li>
+                <li>如需金融方案，请在APP内同步提交审核</li>
+                <li>车辆匹配成功后，专属顾问将第一时间通知您</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+
+        <div class="timeline-item">
+          <input type="checkbox" id="step3" class="real-checkbox" />
+          <div class="custom-checkbox" data-step="3">
+            <svg class="checkmark" viewBox="0 0 24 24" fill="none" stroke="#ffffff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+              <polyline points="20 6 9 17 4 12"></polyline>
+            </svg>
+          </div>
+          <div class="dot"></div>
+          <div class="content">
+            <div class="title">
+              03 · 提车准备 <span>倒计时3天</span>
+            </div>
+            <div class="desc">
+              <ul>
+                <li>提车前3天 | 支付车款：推荐手机网银转账或门店刷卡</li>
+                <li>提车前2天 | 确认上牌方式：</li>
+                <li style="padding-left: 35px;">A. 代办上牌服务（¥520）- 专人全程办理 <span class="recommend">推荐</span></li>
+                <li style="padding-left: 35px;">B. 自行上牌（¥120）- 需提前预约车管所</li>
+                <li>提车前1天 | 购买保险：务必在交付前出单，确保提车当日生效</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+
+        <div class="timeline-item">
+          <input type="checkbox" id="step4" class="real-checkbox" />
+          <div class="custom-checkbox" data-step="4">
+            <svg class="checkmark" viewBox="0 0 24 24" fill="none" stroke="#ffffff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+              <polyline points="20 6 9 17 4 12"></polyline>
+            </svg>
+          </div>
+          <div class="dot"></div>
+          <div class="content">
+            <div class="title">
+              04 · 交付完成 <span>提车日</span>
+            </div>
+            <div class="desc">
+              <ul>
+                <li>携带车主身份证原件（需在有效期内）前往交付中心</li>
+                <li>现场办理临时牌照并完成车辆验收</li>
+                <li>提车后根据选定方式完成正式选号上牌</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="save-btn-container">
+        <button class="save-image-btn" id="saveImageBtn">保存专属计划</button>
+      </div>
+
+      <footer id="footer-area" hidden aria-hidden="true"></footer>
+    </div>
+  </div>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      if (typeof domtoimage === 'undefined') {
+        alert('系统加载失败，请刷新页面重试。');
+        return;
+      }
+
+      const step2StatusText = document.getElementById('step2-status');
+      const step2EditInput = document.getElementById('step2-edit-input');
+      const step1StatusText = document.getElementById('step1-status');
+      const customCheckboxes = document.querySelectorAll('.custom-checkbox');
+      const step1EditableNote = document.getElementById('step1-editable-note');
+      const keyNoteLi = document.getElementById('key-note-li');
+      const statusOptions = document.querySelectorAll('.status-option');
+      const statusContents = document.querySelectorAll('.status-content');
+      
+      let selectedStatus = null;
+      
+      // Step 2 输入框判空逻辑
+      function checkStep2Empty() {
+        const value = step2EditInput.value.trim();
+        if (value === '') {
+          step2EditInput.classList.add('empty');
+        } else {
+          step2EditInput.classList.remove('empty');
+        }
+      }
+      
+      step2EditInput.addEventListener('input', function() {
+        checkStep2Empty();
+      });
+      
+      step2EditInput.addEventListener('blur', checkStep2Empty);
+      
+      checkStep2Empty();
+
+      // Step 1 备注判空逻辑
+      function checkStep1NoteEmpty() {
+        if (selectedStatus !== 'wait') return;
+        const value = step1EditableNote.textContent.trim();
+        if (value === '') {
+          step1EditableNote.classList.add('empty');
+        } else {
+          step1EditableNote.classList.remove('empty');
+        }
+      }
+      
+      step1EditableNote.addEventListener('input', function() {
+        checkStep1NoteEmpty();
+      });
+      
+      step1EditableNote.addEventListener('blur', function() {
+        checkStep1NoteEmpty();
+      });
+      
+      checkStep1NoteEmpty();
+
+      // 复选框逻辑
+      customCheckboxes.forEach(checkbox => {
+        const step = checkbox.getAttribute('data-step');
+        const realCheckbox = document.getElementById(`step${step}`);
+        
+        checkbox.addEventListener('click', function() {
+          this.classList.toggle('checked');
+          if (realCheckbox) realCheckbox.checked = this.classList.contains('checked');
+          
+          if (this.classList.contains('checked')) {
+            if (step === '2' && step2StatusText) {
+              step2StatusText.style.display = 'none';
+            }
+          } else {
+            if (step === '2' && step2StatusText) {
+              step2StatusText.style.display = 'inline-block';
+            }
+          }
+          
+          if (step === '1') checkStep1NoteEmpty();
+          if (step === '2') checkStep2Empty();
+        });
+      });
+
+      statusOptions.forEach(option => {
+        option.addEventListener('click', function() {
+          const status = this.getAttribute('data-status');
+          selectedStatus = status;
+          activateStatus(status);
+          setTimeout(checkStep1NoteEmpty, 100);
+        });
+      });
+
+      function activateStatus(status) {
+        statusOptions.forEach(opt => opt.classList.remove('active'));
+        statusContents.forEach(content => content.classList.remove('active'));
+        
+        const targetOption = document.querySelector(`[data-status="${status}"]`);
+        if (targetOption) targetOption.classList.add('active');
+        
+        const targetContent = document.getElementById(`content-${status}`);
+        if (targetContent) targetContent.classList.add('active');
+        
+        if (step1StatusText) {
+          if (status === 'wait') {
+            step1StatusText.textContent = '待提交';
+          } else if (status === 'pending') {
+            step1StatusText.textContent = '审核中';
+          } else if (status === 'approved') {
+            step1StatusText.textContent = '已通过';
+            // 自动勾选逻辑
+            const step2Checkbox = document.querySelector('[data-step="2"]');
+            const step2Real = document.getElementById('step2');
+            if (step2Checkbox && !step2Checkbox.classList.contains('checked')) {
+              step2Checkbox.classList.add('checked');
+              if (step2Real) step2Real.checked = true;
+              if (step2StatusText) step2StatusText.style.display = 'none';
+            }
+          }
+        }
+        checkStep1NoteEmpty();
+      }
+
+      // 以下为生成图片逻辑
+      const saveImageBtn = document.getElementById('saveImageBtn');
+      
+      function forceDynamicStyles(container) {
+        container.querySelectorAll('.custom-checkbox.checked ~ .content .title').forEach(title => {
+          title.style.color = '#d90429 !important';
+        });
+        
+        container.querySelectorAll('.custom-checkbox.checked ~ .content').forEach(content => {
+          content.style.backgroundColor = '#fff0f0 !important';
+          content.style.borderLeftColor = '#d90429 !important';
+        });
+        
+        container.querySelectorAll('.custom-checkbox.checked').forEach(box => {
+           box.style.background = 'linear-gradient(135deg, #ff5252 0%, #b91c1c 100%) !important';
+        });
+
+        container.querySelectorAll('.status-option.active').forEach(opt => {
+          opt.style.color = '#ffffff !important';
+          opt.style.background = 'linear-gradient(135deg, #e63946 0%, #c8102e 100%) !important';
+        });
+        
+        if (selectedStatus) {
+          container.querySelectorAll(`#content-${selectedStatus} li`).forEach(li => {
+            li.style.color = '#2d3748 !important';
+            li.querySelectorAll('*').forEach(child => child.style.color = '#2d3748 !important');
+          });
+        }
+      }
+
+      saveImageBtn.addEventListener('click', async function() {
+        this.textContent = '生成中...';
+        this.disabled = true;
+
+        const ratioContainer = document.getElementById('ratio-container');
+        const containerEl = ratioContainer.querySelector('.container');
+        const timelineEl = document.getElementById('capture-area');
+        const btnContainer = document.querySelector('.save-btn-container');
+        
+        ratioContainer.classList.add('export-mode');
+        
+        if (btnContainer) btnContainer.style.display = 'none';
+
+        const optionsToHide = [];
+        if (selectedStatus) {
+          const allOptions = document.querySelectorAll('.status-option');
+          allOptions.forEach(opt => {
+            const optStatus = opt.getAttribute('data-status');
+            if (optStatus !== selectedStatus) {
+              optionsToHide.push(opt);
+              opt.style.display = 'none';
+            }
+          });
+        }
+
+        let step2Hidden = false;
+        if (step2EditInput && step2StatusText) {
+          const step2Value = step2EditInput.value.trim();
+          if (step2Value === '') {
+            step2StatusText.style.display = 'none';
+            step2EditInput.style.display = 'none';
+            step2Hidden = true;
+          }
+        }
+
+        let step1NoteHidden = false;
+        if (selectedStatus === 'wait' && keyNoteLi) {
+          const step1Value = step1EditableNote.textContent.trim();
+          if (step1Value === '') {
+            keyNoteLi.style.display = 'none';
+            step1NoteHidden = true;
+          }
+        }
+
+        const originalStyles = {
+          containerWidth: containerEl.style.width,
+          containerHeight: containerEl.style.height,
+          timelineOverflow: timelineEl.style.overflow,
+          timelineFlex: timelineEl.style.flex,
+          timelineHeight: timelineEl.style.height,
+          ratioWidth: ratioContainer.style.width,
+          ratioHeight: ratioContainer.style.height,
+          ratioMaxWidth: ratioContainer.style.maxWidth,
+          ratioMaxHeight: ratioContainer.style.maxHeight,
+          ratioBorderRadius: ratioContainer.style.borderRadius,
+          ratioBoxShadow: ratioContainer.style.boxShadow,
+          ratioOverflow: ratioContainer.style.overflow
+        };
+
+        ratioContainer.style.width = '740px';
+        ratioContainer.style.height = 'auto';
+        ratioContainer.style.maxWidth = 'none';
+        ratioContainer.style.maxHeight = 'none';
+        ratioContainer.style.borderRadius = '0';
+        ratioContainer.style.boxShadow = 'none';
+        ratioContainer.style.overflow = 'visible';
+        
+        containerEl.style.width = '740px';
+        containerEl.style.height = 'auto';
+        timelineEl.style.overflow = 'visible';
+        timelineEl.style.flex = 'none';
+        timelineEl.style.height = 'auto';
+
+        if (ratioContainer) forceDynamicStyles(ratioContainer);
+
+        try {
+          await new Promise(resolve => setTimeout(resolve, 1000));
+          
+          const actualWidth = ratioContainer.offsetWidth;
+          const actualHeight = ratioContainer.offsetHeight;
+          
+          const scale = 2;
+          const exportWidth = actualWidth * scale;
+          const exportHeight = actualHeight * scale;
+          
+          const imageUrl = await domtoimage.toPng(ratioContainer, {
+            quality: 1.0, 
+            bgcolor: '#ffffff',
+            width: exportWidth,
+            height: exportHeight,
+            style: {
+              transform: `scale(${scale})`,
+              transformOrigin: 'top left',
+              width: actualWidth + 'px',
+              height: actualHeight + 'px'
+            }
+          });
+
+          const link = document.createElement('a');
+          link.href = imageUrl;
+          link.download = `TESLA交付计划_高清版_${new Date().toLocaleDateString('zh-CN').replace(/\//g, '-')}.png`;
+          document.body.appendChild(link);
+          link.click();
+          document.body.removeChild(link);
+
+          alert('图片已保存');
+
+        } catch (error) {
+          console.error('导出错误:', error);
+          alert('生成失败：' + error.message + '\n\n请查看控制台了解详情。');
+        } finally {
+          ratioContainer.classList.remove('export-mode');
+          
+          ratioContainer.style.width = originalStyles.ratioWidth;
+          ratioContainer.style.height = originalStyles.ratioHeight;
+          ratioContainer.style.maxWidth = originalStyles.ratioMaxWidth;
+          ratioContainer.style.maxHeight = originalStyles.ratioMaxHeight;
+          ratioContainer.style.borderRadius = originalStyles.ratioBorderRadius;
+          ratioContainer.style.boxShadow = originalStyles.ratioBoxShadow;
+          ratioContainer.style.overflow = originalStyles.ratioOverflow;
+          
+          containerEl.style.width = originalStyles.containerWidth;
+          containerEl.style.height = originalStyles.containerHeight;
+          
+          timelineEl.style.overflow = originalStyles.timelineOverflow;
+          timelineEl.style.flex = originalStyles.timelineFlex;
+          timelineEl.style.height = originalStyles.timelineHeight;
+          
+          optionsToHide.forEach(opt => opt.style.display = 'inline-block');
+          if (btnContainer) btnContainer.style.display = 'block';
+          
+          if (step2Hidden) {
+            if (document.getElementById('step2').checked) {
+              step2StatusText.style.display = 'none';
+            } else {
+              step2StatusText.style.display = 'inline-block';
+            }
+            step2EditInput.style.display = 'inline-block';
+          }
+          
+          if (step1NoteHidden) {
+            keyNoteLi.style.display = 'block';
+          }
+          
+          document.querySelectorAll('*').forEach(el => {
+            if (el.style.color && el.style.color.includes('#d90429')) el.style.color = '';
+            if (el.style.backgroundColor && el.style.backgroundColor.includes('#fff0f0')) el.style.backgroundColor = '';
+          });
+          this.textContent = '保存专属计划';
+          this.disabled = false;
+        }
+      });
+    });
+  </script>
+</body>
+</html>
