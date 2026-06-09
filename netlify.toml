@@ -1,3 +1,12 @@
-# Netlify 发布根目录为当前文件夹（含 index.html、da-auth-config.js 等）
 [build]
   publish = "."
+
+[[redirects]]
+  from = "/roadmap"
+  to = "/提车计划.html"
+  status = 200
+
+[[redirects]]
+  from = "/delroadmap"
+  to = "/提车计划.html"
+  status = 200
